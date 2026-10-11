@@ -43,7 +43,7 @@ jobs:
           export CCMAIL_HOME=/tmp/ccmail-home
           /tmp/v/bin/ccmail --version
           /tmp/v/bin/ccmail doctor || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/

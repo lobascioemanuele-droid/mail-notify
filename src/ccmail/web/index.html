@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ccmail · notifiche email di Claude Code</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<!-- Icon sprite (referenced with <use href="#i-…">) -->
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8L4 8.5"/><path d="M4 4v4.5h4.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17.5v.01"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" class="logo-bg"/><rect x="12" y="19" width="40" height="28" rx="5" class="logo-line"/><path d="M14 22l18 13 18-13" class="logo-line"/><circle cx="49" cy="17" r="8" class="logo-dot"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Vai al contenuto</a>
+
+<!-- Boot / loading -->
+<div id="screen-loading" class="screen">
+  <div class="screen-card">
+    <svg class="logo logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
+    <p class="muted" role="status">Mi collego al demone ccmail…</p>
+  </div>
+</div>
+
+<!-- 401: not authenticated -->
+<div id="screen-auth" class="screen" hidden>
+  <div class="screen-card">
+    <svg class="logo logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
+    <h1 class="screen-title" tabindex="-1">Apri il pannello dal terminale</h1>
+    <p>Per sicurezza questa pagina si apre solo con un link monouso generato sul tuo PC. Il link che hai usato è scaduto, oppure la sessione (8 ore) è terminata.</p>
+    <ol class="steps">
+      <li>Apri un terminale (PowerShell o Prompt dei comandi).</li>
+      <li>Esegui il comando qui sotto: si aprirà di nuovo questa pagina, già autenticata.</li>
+    </ol>
+    <div class="cmd" data-cmd="ccmail open"></div>
+    <p class="muted small">Nessuna password viene chiesta qui: l'accesso vale solo per questo browser e per questo PC.</p>
+  </div>
+</div>
+
+<!-- Daemon unreachable -->
+<div id="screen-down" class="screen" hidden>
+  <div class="screen-card">
+    <svg class="logo logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
+    <h1 class="screen-title" tabindex="-1">Il demone ccmail non risponde</h1>
+    <p>La pagina è caricata ma il servizio locale non è raggiungibile: forse è stato fermato o il PC si è riavviato.</p>
+    <div class="cmd" data-cmd="ccmail open"></div>
+    <p class="muted small" id="down-retry" role="status">Riprovo automaticamente ogni 10 secondi.</p>
+    <button type="button" class="btn" id="down-retry-btn"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Riprova ora</button>
+  </div>
+</div>
+
+<div id="app" class="shell" hidden>
+  <header class="topbar">
+    <a class="brand" href="#panoramica" aria-label="ccmail, vai alla panoramica">
+      <svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>
+      <span class="brand-text"><span class="brand-name">ccmail</span><span class="brand-sub">Email da Claude Code, solo quando serve</span></span>
+    </a>
+    <p class="pill" id="top-status" role="status"><span class="dot" aria-hidden="true"></span><span id="top-status-text">…</span></p>
+  </header>
+
+  <nav class="sidenav" aria-label="Sezioni">
+    <ul>
+      <li><a href="#panoramica" data-nav="panoramica"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>Panoramica</span></a></li>
+      <li><a href="#regole" data-nav="regole"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg><span>Regole</span><span class="nav-dirty" id="nav-dirty" hidden aria-label="modifiche non salvate">●</span></a></li>
+      <li><a href="#attivita" data-nav="attivita"><svg class="ic" aria-hidden="true"><use href="#i-activity"/></svg><span>Attività</span></a></li>
+      <li><a href="#connessione" data-nav="connessione"><svg class="ic" aria-hidden="true"><use href="#i-plug"/></svg><span>Connessione</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <div id="global-banner" class="banner banner-bad" role="alert" hidden></div>
+
+    <!-- ===================== PANORAMICA ===================== -->
+    <section class="view" id="view-panoramica" data-view="panoramica" aria-labelledby="h-panoramica" hidden>
+      <div class="view-head">
+        <h1 id="h-panoramica" tabindex="-1">Panoramica</h1>
+        <p class="lede">Lo stato delle notifiche a colpo d'occhio. L'obiettivo è ricevere <strong>meno email possibile</strong>, ma quelle giuste.</p>
+      </div>
+
+      <div id="server-warnings" class="stack"></div>
+
+      <article class="card hero" id="hero">
+        <div class="hero-main">
+          <button type="button" class="switch" id="toggle" role="switch" aria-checked="false" aria-labelledby="hero-title" aria-describedby="hero-sub hero-note">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </button>
+          <div class="hero-text">
+            <h2 id="hero-title" class="hero-title">…</h2>
+            <p id="hero-sub" class="hero-sub"></p>
+            <p id="hero-note" class="muted small">Accendere o spegnere non invia nessuna email di conferma.</p>
+          </div>
+        </div>
+        <div class="snooze" role="group" aria-labelledby="snooze-title">
+          <div class="snooze-head">
+            <svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>
+            <h3 id="snooze-title" class="h-sub">Non disturbare</h3>
+            <p id="snooze-state" class="muted small"></p>
+          </div>
+          <div class="chips" id="snooze-buttons">
+            <button type="button" class="chip" data-snooze="30">30 min</button>
+            <button type="button" class="chip" data-snooze="60">1 ora</button>
+            <button type="button" class="chip" data-snooze="240">4 ore</button>
+            <button type="button" class="chip" data-snooze="tomorrow" id="snooze-tomorrow">Fino a domattina</button>
+            <button type="button" class="chip chip-quiet" data-snooze="0" id="snooze-cancel" hidden>Annulla pausa</button>
+          </div>
+        </div>
+      </article>
+
+      <div class="grid-2">
+        <article class="card" aria-labelledby="h-health">
+          <h2 id="h-health" class="card-title">Controllo di salute</h2>
+          <p class="muted small">Ogni voce deve essere verde perché le email partano davvero.</p>
+          <ul class="health" id="health"></ul>
+        </article>
+
+        <article class="card" aria-labelledby="h-kpi">
+          <h2 id="h-kpi" class="card-title">Ultime 24 ore</h2>
+          <div class="kpis">
+            <div class="kpi"><span class="kpi-num" id="kpi-sent">–</span><span class="kpi-label">email inviate</span></div>
+            <div class="kpi kpi-good"><span class="kpi-num" id="kpi-skipped">–</span><span class="kpi-label">email evitate</span></div>
+            <div class="kpi" id="kpi-failed-box"><span class="kpi-num" id="kpi-failed">–</span><span class="kpi-label">non partite <span class="nowrap">(da ritentare)</span></span></div>
+            <div class="kpi"><span class="kpi-num" id="kpi-sessions">–</span><span class="kpi-label">sessioni attive</span></div>
+          </div>
+          <p class="muted small" id="kpi-ratio"></p>
+          <div class="budget">
+            <div class="budget-head">
+              <span id="budget-label">Budget orario</span>
+              <span class="muted small" id="budget-text"></span>
+            </div>
+            <div class="meter" id="budget-meter" role="meter" aria-labelledby="budget-label" aria-valuemin="0"><span class="meter-fill"></span></div>
+          </div>
+          <div class="lastmail" id="lastmail"></div>
+        </article>
+      </div>
+
+      <article class="card" aria-labelledby="h-why">
+        <h2 id="h-why" class="card-title">Perché non ho ricevuto email?</h2>
+        <p class="muted small">Ecco quante email sono state trattenute nelle ultime 24 ore, e da quale regola. Se una regola è troppo severa, puoi allentarla.</p>
+        <ul class="reasons" id="reasons"></ul>
+      </article>
+    </section>
+
+    <!-- ===================== REGOLE ===================== -->
+    <section class="view" id="view-regole" data-view="regole" aria-labelledby="h-regole" hidden>
+      <div class="view-head">
+        <h1 id="h-regole" tabindex="-1">Regole</h1>
+        <p class="lede">Ogni regola qui sotto <strong>toglie</strong> email. Una mail parte solo se supera tutti i filtri. Le modifiche valgono dopo aver premuto <em>Salva</em>.</p>
+      </div>
+
+      <form id="rules-form" class="stack-lg" novalidate>
+        <fieldset class="card group">
+          <legend class="card-title">1 · Per quali eventi scriverti</legend>
+          <p class="muted small group-intro">Claude Code segnala diversi momenti. Scegli quali meritano un'email.</p>
+          <div class="toggle-list" id="events-list"></div>
+        </fieldset>
+
+        <fieldset class="card group" id="ntypes-group">
+          <legend class="card-title">2 · Quali richieste di attenzione</legend>
+          <p class="muted small group-intro">Valgono solo per l'evento <em>Claude ti chiede qualcosa</em>. Quelle non spuntate vengono registrate ma non inviate.</p>
+          <p class="banner banner-info small" id="ntypes-off-note" hidden>L'evento «Claude ti chiede qualcosa» è spento: queste scelte non hanno effetto finché non lo riattivi.</p>
+          <div class="check-grid" id="ntypes-list"></div>
+          <div class="field-foot"><button type="button" class="linkbtn" data-reset="notify_types" hidden></button></div>
+        </fieldset>
+
+        <fieldset class="card group">
+          <legend class="card-title">3 · Filtri anti-rumore</legend>
+          <p class="muted small group-intro">Limiti di tempo e quantità. Valori più alti = meno email.</p>
+          <div class="fields" id="noise-fields"></div>
+        </fieldset>
+
+        <fieldset class="card group">
+          <legend class="card-title">4 · Processi in background</legend>
+          <p class="muted small group-intro" id="bg-intro"></p>
+          <div class="fields" id="bg-fields"></div>
+          <p class="banner banner-info small" id="bg-mode-note" role="status"></p>
+          <p class="banner banner-warn small" id="bg-conflict" role="alert" hidden></p>
+        </fieldset>
+
+        <fieldset class="card group">
+          <legend class="card-title">5 · Cosa c'è dentro l'email</legend>
+          <div class="radio-cards" role="radiogroup" aria-labelledby="cm-label">
+            <p id="cm-label" class="field-label">Contenuto</p>
+            <label class="radio-card">
+              <input type="radio" name="content_mode" value="summary">
+              <span class="radio-card-body"><strong>Riassunto (consigliato)</strong><span class="muted small">Oggetto con la sintesi e, nel corpo, un riassunto breve: prime frasi, punti principali ed eventuale domanda finale (segreti oscurati).</span></span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="content_mode" value="full">
+              <span class="radio-card-body"><strong>Messaggio completo</strong><span class="muted small">Nel corpo l'intero ultimo messaggio di Claude, tagliato al limite scelto (segreti oscurati).</span></span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="content_mode" value="title">
+              <span class="radio-card-body"><strong>Solo titolo</strong><span class="muted small">Più riservato: solo oggetto e dati di contesto, nessun testo della conversazione (l'oggetto contiene però una riga di sintesi).</span></span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="content_mode" value="minimal">
+              <span class="radio-card-body"><strong>Minimo</strong><span class="muted small">Nessun testo generato da Claude, neanche nell'oggetto: solo «progetto: task completato» e dati di contesto.</span></span>
+            </label>
+          </div>
+          <div class="field-foot"><button type="button" class="linkbtn" data-reset="content_mode" hidden></button></div>
+          <div class="fields" id="content-fields"></div>
+          <div class="preview" aria-labelledby="pv-label">
+            <p class="field-label" id="pv-label">Anteprima indicativa <span class="muted small">(si aggiorna mentre modifichi)</span></p>
+            <div class="mail">
+              <p class="mail-subject" id="pv-subject"></p>
+              <pre class="mail-body" id="pv-body"></pre>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="card group">
+          <legend class="card-title">6 · Comandi suggeriti e risposta via email</legend>
+          <p class="muted small group-intro">Dentro l'email: 2-3 comandi pronti da incollare nella chat e, se vuoi, la possibilità di rispondere all'email per spegnere un progetto direttamente da Gmail (anche dal telefono).</p>
+          <div class="fields" id="mail-extra-fields"></div>
+        </fieldset>
+      </form>
+
+      <article class="card sim" aria-labelledby="h-sim">
+        <h2 id="h-sim" class="card-title"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Prova una regola</h2>
+        <p class="muted small">Simula un evento e scopri se ti arriverebbe un'email. Usa le regole <strong>salvate</strong>, non scrive nulla e non invia nulla.</p>
+        <p class="banner banner-warn small" id="sim-dirty" hidden>Hai modifiche non salvate: la prova usa ancora le regole salvate. Salva per provarle.</p>
+        <form id="sim-form" class="sim-form" novalidate>
+          <div class="field">
+            <label class="field-label" for="sim-event">Evento</label>
+            <select id="sim-event">
+              <option value="Stop">Claude ha finito di rispondere</option>
+              <option value="Notification">Claude ti chiede qualcosa</option>
+              <option value="StopFailure">Turno interrotto da un errore</option>
+              <option value="SessionEnd">Sessione chiusa</option>
+            </select>
+          </div>
+          <div class="field" id="sim-elapsed-field">
+            <label class="field-label" for="sim-elapsed">Durata del turno</label>
+            <div class="inline">
+              <input type="number" id="sim-elapsed" min="0" max="1440" step="1" value="5" inputmode="numeric" aria-describedby="sim-elapsed-unit">
+              <span class="unit" id="sim-elapsed-unit">minuti</span>
+            </div>
+          </div>
+          <div class="field" id="sim-ntype-field" hidden>
+            <label class="field-label" for="sim-ntype">Tipo di richiesta</label>
+            <select id="sim-ntype"></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="sim-session">Sessione</label>
+            <select id="sim-session" aria-describedby="sim-session-help"><option value="">Nuova sessione (nessuna email recente)</option></select>
+            <p class="help" id="sim-session-help">Con una sessione reale conta anche la pausa dall'ultima email inviata.</p>
+          </div>
+          <div class="field field-wide">
+            <label class="field-label" for="sim-message">Messaggio di Claude (facoltativo)</label>
+            <textarea id="sim-message" rows="3" maxlength="5000">Ho completato il refactoring del modulo di pagamento.
+Tutti i 42 test passano. Ti va di dare un'occhiata alla PR?</textarea>
+          </div>
+          <div class="field-wide">
+            <button type="submit" class="btn btn-primary"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Prova</button>
+          </div>
+        </form>
+        <div class="sim-out">
+          <ol class="pipeline" id="pipeline" aria-label="Filtri valutati in ordine"></ol>
+          <div id="sim-result" aria-live="polite"></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ===================== ATTIVITÀ ===================== -->
+    <section class="view" id="view-attivita" data-view="attivita" aria-labelledby="h-attivita" hidden>
+      <div class="view-head view-head-row">
+        <div>
+          <h1 id="h-attivita" tabindex="-1">Attività</h1>
+          <p class="lede">I tuoi progetti, le loro chat e cosa sta facendo Claude in ognuna. Più sotto, le decisioni di ccmail evento per evento.</p>
+        </div>
+        <div class="live">
+          <span class="muted small" id="live-text" aria-live="off"></span>
+          <button type="button" class="btn btn-small" id="live-toggle" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg><span>Pausa</span></button>
+          <button type="button" class="btn btn-small" id="live-now"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Aggiorna</button>
+        </div>
+      </div>
+
+      <article class="card" aria-labelledby="h-projects">
+        <h2 id="h-projects" class="card-title" tabindex="-1">Progetti e chat</h2>
+        <p class="model" id="model-line">
+          <span class="model-step"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><strong>Progetto</strong> <span class="muted">la cartella in cui lavori</span></span>
+          <svg class="ic model-arrow" aria-hidden="true"><use href="#i-arrow"/></svg><span class="sr">, contiene: </span>
+          <span class="model-step"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg><strong>Chat</strong> <span class="muted">una conversazione, con il suo nome nell'app</span></span>
+          <svg class="ic model-arrow" aria-hidden="true"><use href="#i-arrow"/></svg><span class="sr">, che produce: </span>
+          <span class="model-step"><svg class="ic" aria-hidden="true"><use href="#i-activity"/></svg><strong>Eventi</strong> <span class="muted">cosa è successo, email comprese</span></span>
+        </p>
+        <div class="banner banner-info small" id="app-meta-note" hidden>
+          <svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>
+          <div class="banner-body">
+            <p>Non trovo i dati dell'app desktop di Claude: i nomi delle chat arrivano solo dai transcript di Claude Code (il registro che salva su disco), quindi alcune chat possono comparire come «Sessione …».</p>
+            <button type="button" class="linkbtn" id="app-meta-diag">Vedi cosa trova ccmail in Connessione › Diagnostica<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          </div>
+        </div>
+        <div class="projects" id="projects"></div>
+      </article>
+
+      <article class="card" aria-labelledby="h-timeline">
+        <h2 id="h-timeline" class="card-title">Cronologia eventi</h2>
+        <div class="filters" role="group" aria-label="Filtri cronologia">
+          <div class="field">
+            <label class="field-label" for="f-event">Evento</label>
+            <select id="f-event">
+              <option value="">Tutti gli eventi</option>
+              <option value="Stop">Fine risposta</option>
+              <option value="Notification">Richiesta di attenzione</option>
+              <option value="StopFailure">Errore</option>
+              <option value="SessionEnd">Sessione chiusa</option>
+              <option value="UserPromptSubmit">Tuo messaggio</option>
+              <option value="SessionStart">Sessione avviata</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="field-label" id="f-dec-label">Esito</span>
+            <div class="seg" role="radiogroup" aria-labelledby="f-dec-label" id="f-decision">
+              <label><input type="radio" name="f-decision" value="" checked><span>Tutti</span></label>
+              <label><input type="radio" name="f-decision" value="queued"><span>Con email</span></label>
+              <label><input type="radio" name="f-decision" value="skip"><span>Evitate</span></label>
+              <label><input type="radio" name="f-decision" value="recorded"><span>Solo registrati</span></label>
+            </div>
+          </div>
+          <div class="field" id="f-session-wrap" hidden>
+            <span class="field-label" id="f-session-label">Chat</span>
+            <button type="button" class="chip chip-on chip-filter" id="f-session-clear" aria-describedby="f-session-label"><span class="chip-name" id="f-session-name"></span><span class="chip-x"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>rimuovi filtro</span></button>
+          </div>
+        </div>
+        <ol class="timeline" id="timeline"></ol>
+        <div class="more"><button type="button" class="btn btn-small" id="timeline-more" hidden>Mostra altri eventi</button></div>
+      </article>
+
+      <article class="card" aria-labelledby="h-outbox">
+        <h2 id="h-outbox" class="card-title" tabindex="-1">Posta in uscita</h2>
+        <p class="muted small">Le email decise da ccmail. Se l'invio fallisce viene ritentato fino a 5 volte; dopo puoi riprovare a mano.</p>
+        <ul class="outbox" id="outbox"></ul>
+      </article>
+
+      <article class="card card-danger" aria-labelledby="h-clear">
+        <h2 id="h-clear" class="card-title">Cancella cronologia</h2>
+        <p class="muted small">Elimina eventi registrati ed email già inviate o fallite. Le email ancora in coda e le regole non vengono toccate.</p>
+        <button type="button" class="btn btn-danger" id="clear-history"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Cancella cronologia…</button>
+      </article>
+    </section>
+
+    <!-- ===================== CONNESSIONE ===================== -->
+    <section class="view" id="view-connessione" data-view="connessione" aria-labelledby="h-connessione" hidden>
+      <div class="view-head">
+        <h1 id="h-connessione" tabindex="-1">Connessione</h1>
+        <p class="lede">Da quale account parte l'email, a chi arriva e come si collega al server di posta.</p>
+      </div>
+
+      <div class="grid-2">
+        <article class="card" aria-labelledby="h-cred">
+          <h2 id="h-cred" class="card-title"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Credenziali di invio</h2>
+          <dl class="kv" id="cred-kv"></dl>
+          <div id="cred-note"></div>
+          <p class="muted small">La password per le app non passa mai da questa pagina: si imposta solo dal terminale, ed è conservata cifrata da Windows.</p>
+          <div class="cmd" data-cmd="ccmail init"></div>
+        </article>
+
+        <article class="card" aria-labelledby="h-test">
+          <h2 id="h-test" class="card-title"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>Email di prova</h2>
+          <p class="small">Invia <strong>una</strong> email reale a <strong id="test-to">…</strong> con le impostazioni salvate, ignorando le regole. Serve a verificare che tutto funzioni.</p>
+          <p class="banner banner-warn small" id="test-dirty" hidden>Hai modifiche alla connessione non salvate: la prova userà quelle salvate.</p>
+          <button type="button" class="btn btn-primary" id="test-btn"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>Invia email di prova…</button>
+          <div id="test-result" class="result" role="status" aria-live="polite"></div>
+        </article>
+      </div>
+
+      <form id="conn-form" class="card group" novalidate>
+        <h2 class="card-title">Destinatario e server</h2>
+        <div class="fields" id="conn-fields"></div>
+        <div class="presets">
+          <span class="muted small">Preimpostazioni:</span>
+          <button type="button" class="chip" data-preset="gmail-ssl">Gmail · SSL 465</button>
+          <button type="button" class="chip" data-preset="gmail-tls">Gmail · STARTTLS 587</button>
+          <button type="button" class="chip" data-preset="outlook">Outlook · STARTTLS 587</button>
+          <button type="button" class="chip" data-preset="icloud">iCloud · STARTTLS 587</button>
+          <button type="button" class="chip" data-preset="yahoo">Yahoo · SSL 465</button>
+        </div>
+      </form>
+
+      <article class="card" aria-labelledby="h-apppw">
+        <h2 id="h-apppw" class="card-title">Come creare una password per le app di Gmail</h2>
+        <p class="small">Gmail non accetta la password normale per l'invio da programmi: serve una <em>password per le app</em> di 16 lettere.</p>
+        <ol class="steps">
+          <li>Attiva la <strong>verifica in due passaggi</strong> sul tuo account Google, se non l'hai già fatto.</li>
+          <li>Apri <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">https://myaccount.google.com/apppasswords</a> <span class="muted small">(si apre in una nuova scheda)</span>.</li>
+          <li>Scrivi un nome, ad esempio <q>ccmail</q>, e premi <em>Crea</em>. Copia le 16 lettere mostrate.</li>
+          <li>In un terminale esegui il comando qui sotto e incolla la password quando richiesta (non viene mostrata mentre scrivi).</li>
+        </ol>
+        <div class="cmd" data-cmd="ccmail init"></div>
+        <p class="muted small">Puoi revocare la password per le app in qualsiasi momento dalla stessa pagina di Google.</p>
+      </article>
+
+      <article class="card" aria-labelledby="h-diag" id="diag-card">
+        <div class="card-head-row">
+          <h2 id="h-diag" class="card-title" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>Diagnostica</h2>
+          <button type="button" class="btn btn-small" id="diag-refresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Aggiorna</button>
+        </div>
+        <p class="muted small">Cosa vede ccmail dell'app Claude e di Claude Code. Serve a capire perché un nome di chat o un progetto non compare. Solo lettura: non cambia nulla.</p>
+        <p id="diag-status" class="muted small" role="status"></p>
+        <div id="diag" class="diag"></div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>ccmail <span id="foot-ver"></span></span>
+    <span aria-hidden="true">·</span>
+    <span>Funziona solo su questo PC (127.0.0.1). Nessun dato esce, a parte le email che decidi di ricevere.</span>
+  </footer>
+
+  <!-- Save bar (Regole + Connessione) -->
+  <div class="savebar" id="savebar" hidden>
+    <p class="savebar-text" id="savebar-text" role="status"></p>
+    <div class="savebar-actions">
+      <button type="button" class="btn" id="discard-btn">Annulla modifiche</button>
+      <button type="button" class="btn btn-primary" id="save-btn"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+  <form method="dialog" class="dialog">
+    <h2 id="confirm-title" class="card-title"></h2>
+    <p id="confirm-body"></p>
+    <div class="dialog-actions">
+      <button type="submit" value="cancel" class="btn" id="confirm-cancel">Annulla</button>
+      <button type="submit" value="ok" class="btn btn-primary" id="confirm-ok">Conferma</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -84,7 +84,9 @@ Italian; mails and the command line follow the `language` setting (`auto`, `it`,
 Off by default (web app → Regole → Comandi suggeriti e risposta via email). When on, ccmail reads your mailbox over
 IMAP and accepts only replies that: come from you, are verified by the provider, quote a valid reference from a recent
 ccmail mail, and start with `OFF`, `ON` or `PAUSE [minutes]`. Optionally, any other reply text is delivered to the chat
-the mail came from. See [SECURITY.md](SECURITY.md) for the exact rules.
+the mail came from, and **the answer to it is mailed back to you** when that turn ends, even if it was short
+(subject "risposta alla tua email"). See [SECURITY.md](SECURITY.md) for the exact rules and
+[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) for the delivery paths.
 
 ### The `/mail-notify` skill
 

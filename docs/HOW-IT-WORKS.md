@@ -2,6 +2,25 @@
 
 Design notes: hooks, daemon, background processes, chats and projects. For installation and usage see the [README](../README.md); for the security model see [SECURITY.md](../SECURITY.md).
 
+## Reply delivery and the answer mail
+
+1. **Detection.** With the reply channel on, the daemon keeps one IMAP connection open and asks for news every 2 s
+   (`NOOP`). When the mailbox grows it scans immediately; a full pass runs every `inbound_poll_s`. A pass issues one
+   `SEARCH` and **one batched header `FETCH`** for the newest 200 messages, and fetches whole messages only for
+   unseen ones.
+2. **Acceptance.** Sender, provider authentication (or Gmail's Sent label), a valid `ccm-<12 hex>` reference, replay
+   and age checks; then the command (`OFF`, `ON`, `PAUSA`/`PAUSE`) or, if enabled, the free text is queued for the
+   session the mail came from. A confirmation mail is queued in the same second.
+3. **Hand-over to Claude**, whichever applies first: the parked wake hook of an idle chat (`asyncRewake`, exit 2),
+   or the synchronous `PostToolBatch` / `UserPromptSubmit` hook of a working chat, which returns the text as
+   `additionalContext` for the next model call.
+4. **The answer.** Delivery marks the session `reply_pending`. At the next `Stop` that turn is mailed even when it
+   is shorter than `min_elapsed_s`, ignores the cooldown and background-task silence, and carries the subject
+   "risposta alla tua email". The flag is cleared at once; the per-project switch, snooze, disabled state and the
+   hourly cap still apply.
+
+See [RESOURCES.md](RESOURCES.md) for what each of these paths costs.
+
 ## Hooks and daemon
 
 Hooks are tiny: `python -m ccmail hook` forwards the hook JSON to the daemon on `127.0.0.1` and always exits 0 (if the daemon is down it starts it, and as a last resort spools the event to disk). All decisions — filtering, cooldowns, redaction, retries — happen in the daemon.

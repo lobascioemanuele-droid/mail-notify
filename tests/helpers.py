@@ -1,3 +1,6 @@
+import os as _os
+_os.environ.setdefault("CCMAIL_LANG", "it")  # tests assert the Italian texts; English has its own tests
+
 import os
 import tempfile
 import unittest
@@ -9,7 +12,7 @@ from ccmail import chats, paths
 
 class TmpHome(unittest.TestCase):
     def setUp(self):
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self._old = os.environ.get("CCMAIL_HOME")
         self._old_sessions = os.environ.get("CCMAIL_CLAUDE_SESSIONS")
         os.environ["CCMAIL_HOME"] = self._tmp.name

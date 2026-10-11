@@ -1,10 +1,11 @@
 """Idempotent merge of ccmail hooks into Claude Code settings.json (with timestamped backup)."""
 import json
 import os
-import subprocess
 import sys
 import time
 from pathlib import Path
+
+from . import paths
 
 EVENTS = ["UserPromptSubmit", "Stop", "Notification", "StopFailure", "SessionStart", "SessionEnd"]
 OURS = "-m ccmail hook"
@@ -15,7 +16,7 @@ TASK_NAME = "ccmail"
 
 
 def default_settings_path() -> Path:
-    return Path(os.environ.get("CLAUDE_SETTINGS") or Path.home() / ".claude" / "settings.json")
+    return Path(os.environ.get("CLAUDE_SETTINGS") or paths.claude_dir() / "settings.json")
 
 
 def hook_command() -> str:
@@ -129,6 +130,25 @@ def uninstall(path: Path = None, legacy: bool = False) -> int:
     return n
 
 
+def hook_interpreters(path: Path = None) -> list:
+    """Executables referenced by our hook commands in settings.json (to spot a moved/removed Python)."""
+    path = path or default_settings_path()
+    found = set()
+    try:
+        data = _load(path)
+    except (OSError, ValueError):
+        return []
+    for groups in (data.get("hooks") or {}).values():
+        for g in groups if isinstance(groups, list) else []:
+            for h in g.get("hooks", []) if isinstance(g, dict) else []:
+                cmd = str(h.get("command", ""))
+                if OURS in cmd or WAKE in cmd:
+                    exe = cmd.split(" -m ccmail", 1)[0].strip().strip('"')
+                    if exe:
+                        found.add(exe)
+    return sorted(found)
+
+
 def has_legacy(path: Path = None) -> bool:
     path = path or default_settings_path()
     return LEGACY in json.dumps(_load(path))
@@ -145,18 +165,7 @@ def is_installed(path: Path = None) -> bool:
             and WAKE in json.dumps(hooks.get("Stop", [])) and batch_sync)
 
 
-# ---- autostart (Windows Task Scheduler, current user, no elevation) ----
+# ---- autostart: see autostart.py (Task Scheduler / launchd / systemd --user) ----
 def autostart(on: bool) -> bool:
-    if os.name != "nt":
-        return False
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    if on:
-        exe = sys.executable
-        w = os.path.join(os.path.dirname(exe), "pythonw.exe")
-        if os.path.exists(w):
-            exe = w
-        cmd = ["schtasks", "/Create", "/TN", TASK_NAME, "/SC", "ONLOGON", "/RL", "LIMITED", "/F",
-               "/TR", f'"{exe}" -m ccmail daemon']
-    else:
-        cmd = ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"]
-    return subprocess.run(cmd, capture_output=True, creationflags=flags).returncode == 0
+    from . import autostart as _a
+    return bool(_a.enable()) if on else _a.disable()

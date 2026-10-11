@@ -1,7 +1,10 @@
 # Security
 
 ## Reporting
-Open a private security advisory on the repository, or email the maintainer. Please don't file public issues for vulnerabilities.
+Use GitHub's private vulnerability reporting: **Security > Report a vulnerability** on the repository. Please don't file public issues for vulnerabilities. Fixes ship as a patch release with a CHANGELOG note.
+
+## Supported versions
+Only the latest release receives security fixes.
 
 ## Threat model (v0.1, outbound-only)
 
@@ -9,7 +12,7 @@ Open a private security advisory on the repository, or email the maintainer. Ple
 |---|---|
 | Malicious web page calling the local API (CSRF, DNS rebinding) | Bind `127.0.0.1` only; `Host` must be `127.0.0.1:<port>`/`localhost:<port>`; foreign `Origin` rejected; no CORS; web session cookie is `HttpOnly; SameSite=Strict`, writes also need an `X-CSRF` header; JSON content-type enforced; strict CSP. |
 | Other local process abusing the daemon | API needs a random token stored in a user-only file; the web login uses a 60 s single-use nonce obtained with that token; per-session cooldown and an hourly cap bound the damage. |
-| Credential theft | Credential Manager / DPAPI; no API returns or accepts the password; never logged; error messages are sanitised. |
+| Credential theft | Windows Credential Manager, macOS Keychain or Linux Secret Service; the password reaches `security` / `secret-tool` through stdin, never on a command line. Fallback file: DPAPI + ACL on Windows, mode 0600 *unencrypted* on macOS/Linux (announced loudly). No API returns or accepts the password; never logged; error messages are sanitised. |
 | Secrets in mail content | Best-effort regex redaction (keys, tokens, `password=`…), truncation, "title only" mode. Not a guarantee — assume mail content is visible to your provider. |
 | Header injection | Control characters stripped from subjects; messages built with `email.message.EmailMessage`. |
 | SMTP interception | TLS with certificate verification (`ssl.create_default_context()`); no plaintext fallback. |
@@ -18,7 +21,7 @@ Open a private security advisory on the repository, or email the maintainer. Ple
 | Prompt-injected model output triggering actions | v0.1 only *sends* mail; nothing in an email or event is ever executed. An inbound channel (if ever added) needs its own design (allow-lists, signing). |
 
 ## Out of scope
-Malware running as your Windows user (it can read the same stores as ccmail), and compromise of the mail provider account.
+Malware running as your operating-system user (it can read the same stores as ccmail), and compromise of the mail provider account.
 
 ## Reply channel (v0.4, off by default)
 

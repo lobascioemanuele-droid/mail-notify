@@ -65,7 +65,7 @@ Chat nell'app (da metadati): **6**, in **2 progetti**.
 | Progetto (`originCwd`) | Chat | Titoli (troncati) | Ultima attività |
 |---|---|---|---|
 | mail-notify | 1 | «ccmail: daemon notifiche Claude Co…» (auto) | 10-10 16:22 |
-| oropan - Copia | 5 | «T3b WP1 implementation» (user), «T3 WP1 Test Ottimizzazione Prophet» (user), «Oropan DSS onboarding» (auto), «T3 WP1 implementation» (auto), «Verifica plan T3 Wp1» (auto) | 10-10 16:05 … 10-07 |
+| acme - Copy | 5 | «T3b WP1 implementation» (user), «T3 WP1 Test Ottimizzazione Prophet» (user), «Acme DSS onboarding» (auto), «T3 WP1 implementation» (auto), «Verifica plan T3 Wp1» (auto) | 10-10 16:05 … 10-07 |
 
 - **Chat cancellate**: 2 (`deleted_*`). **[VERIFICATO]**
 - **Transcript senza chat nell'app** (esclusi i sotto-agenti): 2 sessioni del 10-05, probabilmente aperte da terminale o in
@@ -77,7 +77,7 @@ Chat nell'app (da metadati): **6**, in **2 progetti**.
 
 ### 4.1 «uscite» non è un progetto
 Nel database di ccmail la sessione `e47891a4` aveva `cwd = …\uscite`. Nell'app la stessa chat («T3 WP1 Test Ottimizzazione Prophet»,
-`cliSessionId = e47891a4`) ha `originCwd = oropan - Copia`. Quindi **«uscite» è una sottocartella in cui Claude si è spostato**, non una
+`cliSessionId = e47891a4`) ha `originCwd = acme - Copy`. Quindi **«uscite» è una sottocartella in cui Claude si è spostato**, non una
 cartella di progetto. Il vecchio codice usava la cartella corrente come "progetto". **[VERIFICATO]**
 
 ### 4.2 I nomi delle chat non comparivano

@@ -1,64 +1,160 @@
 # ccmail
 
-A small local daemon for Windows that emails you (Gmail SMTP) about [Claude Code](https://code.claude.com) events, with a local web app for configuration. Python ≥ 3.10, standard library only, MIT licensed.
+**E-mail notifications for [Claude Code](https://code.claude.com), with a local settings web app.**
+A small daemon on your own computer mails you when Claude finishes a long task, needs a permission, hits an error or a
+usage limit, or when your background processes finish – and you can answer from your phone by replying to the mail.
 
-**Design goal: as few emails as possible.** A mail is sent only when *all* gates pass:
+[![CI](https://github.com/lobascioemanuele-droid/ccmail/actions/workflows/ci.yml/badge.svg)](https://github.com/lobascioemanuele-droid/ccmail/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-- no confirmation mails — `init`, `on`, `off` never send anything (only an explicit `ccmail test` does);
-- `Stop` mails only for turns longer than `min_elapsed_s` (default 120 s);
-- silence for `mute_after_toggle_s` (60 s) after switching on/off;
-- at most one mail per session every `cooldown_s` (60 s);
-- hard cap `max_per_hour` (10) across sessions;
-- `Notification` only for the types you select (default: `permission_prompt`, `agent_needs_input`);
-- "title only" mode if you don't want message text in your inbox.
+- **Few mails, on purpose.** Every mail passes several gates (turn length, cooldown, hourly cap, event types). Turning
+  it on or off sends nothing.
+- **Private by design.** Standard library only, no telemetry, nothing leaves your machine except the mail itself, sent
+  by your own mail account. The password lives in your system's credential store.
+- **Reply to act.** Reply `OFF`, `ON` or `PAUSE 60` to a notification, or – if you enable it – write a sentence and it
+  is delivered to the Claude chat that sent the mail.
+- **Understands your chats.** Mails carry the project name, the chat title and your Claude account name, and a short
+  summary of what Claude said (never cut mid-sentence).
+- **Works while you are away.** While background tasks run, Claude is woken at a period you choose, only if tasks exist,
+  to report their status.
+
+> **Status: beta.** Windows is the tested platform. macOS and Linux are implemented and covered by unit tests in CI,
+> but have had little real-world use – please report what you find. Gmail is the tested provider; Outlook, iCloud and
+> Yahoo presets are provided and untested.
+
+## Requirements
+
+- Python 3.10 or newer, and [Claude Code](https://code.claude.com) (CLI or desktop app).
+- A mail account that allows SMTP with an **app password** (Gmail, Outlook, iCloud, Yahoo or any SMTP server).
+- For replies by mail: IMAP access to the same mailbox.
 
 ## Install
 
-```powershell
-pipx install git+https://github.com/<you>/ccmail     # or: pip install .
-ccmail init            # you run this: SMTP host, Gmail address, App Password (hidden prompt)
-ccmail install-hooks --autostart
-ccmail on
-ccmail open            # configuration web app on 127.0.0.1
+```bash
+pipx install ccmail          # or: pip install ccmail
 ```
 
-If `ccmail` is not on `PATH`, use `python -m ccmail ...`. No `curl | sh` / `irm | iex` installers, ever.
+Until the package is on PyPI, install from the repository: `pipx install git+https://github.com/lobascioemanuele-droid/ccmail`.
+ccmail is only ever installed with pip/pipx – there is no `curl | sh` or `irm | iex` installer.
 
-Use a Gmail [App Password](https://support.google.com/accounts/answer/185833) (requires 2-Step Verification). The password is stored in Windows Credential Manager (generic credential `ccmail:smtp`); if that fails it falls back to a DPAPI-encrypted file in `%APPDATA%\ccmail` (bound to your Windows user, ACL-restricted) and warns you. It is never written to logs, the database, the repo or the web app.
+## Quick start
 
-## How it works
+Run these in your own terminal. ccmail never asks Claude to handle your password.
 
-Hooks are tiny: `python -m ccmail hook` forwards the hook JSON to the daemon on `127.0.0.1` and always exits 0 (if the daemon is down it starts it, and as a last resort spools the event to disk). All decisions — filtering, cooldowns, redaction, retries — happen in the daemon.
+```bash
+ccmail init                       # 1. sender address, provider, app password (hidden prompt)
+ccmail install-hooks --autostart  # 2. add the hooks to Claude Code and start the daemon at logon
+ccmail install-skill              # 3. install the /mail-notify skill (optional but recommended)
+ccmail on                         # 4. turn notifications on (sends no mail)
+ccmail test                       # 5. send ONE test mail (optional)
+ccmail open                       # settings web app, on 127.0.0.1 only
+```
 
-Hooked events: `UserPromptSubmit` (records turn start only), `Stop`, `Notification`, `StopFailure`, `SessionStart`, `SessionEnd`, `PostToolUse` for `Bash` (async; notices background tasks), and `PostToolBatch` (async; liveness only, since 0.3.0). After upgrading, run `ccmail install-hooks` again and restart Claude Code.
+Then **restart Claude Code** – hooks are read at startup. If something is off, run `ccmail doctor`: it checks the
+installation and tells you what to fix, without printing any secret.
 
-### Background processes (v0.2)
+Use an *app password*, not your normal password: [Gmail](https://myaccount.google.com/apppasswords) (needs 2-step
+verification), [Outlook](https://account.live.com/proofs/AppPassword), [iCloud](https://account.apple.com/account/manage),
+[Yahoo](https://login.yahoo.com/account/security). `ccmail init` shows the right link for your provider.
 
-- While background tasks are running (`Stop.background_tasks`), intermediate `Stop` events send **no** mail.
-- Every `heartbeat_minutes` (web app → Regole → Processi in background), and only if tasks are still running, the daemon wakes Claude through an `asyncRewake` Stop hook (`ccmail wake`, exit code 2 → system reminder). Claude queries the tasks and its short reply is mailed as a status update.
-- When the last task disappears from `background_tasks`, one "finished" mail is sent.
-- If waking an idle session does not work on your setup, set the mode to `skill`: Claude then schedules its own wake-ups (see the `mail-notify` skill).
-- Unknown turn duration counts as short: wake-up turns never mail through the ordinary path.
+## What you get
 
-## Chats and projects (v0.3)
+| Mail | When |
+|---|---|
+| Task finished | A turn longer than 2 minutes (setting) ended |
+| Needs your input | A permission prompt or a question is waiting |
+| Error / usage limit | An API error, or the account limit was reached (with the reset time) |
+| Background processes | Periodic status while they run; one mail when the last one ends |
+| Chat stalled | Optional watchdog: no events for N minutes with tasks declared |
 
-- **Chat names.** The daemon reads the Claude desktop app's per-chat metadata (`claude-code-sessions\<account>\<org>\local_*.json`: title, project folder, archived flag, last activity). Mails show `Chat: <name>`; if the name is unknown they show `Sessione: <first 8 characters of the session id>`. If the app metadata is missing, the title falls back to the latest `custom-title` record at the end of the session transcript.
-- **Where the metadata is found.** The desktop app (Microsoft Store package) and Store Python are both virtualized, so ccmail looks in `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code-sessions` and in `%APPDATA%\Claude\claude-code-sessions`, and merges both. Override with the environment variable `CCMAIL_CLAUDE_SESSIONS` (several paths separated by `;`).
-- **Project of a session**, strongest evidence first: the chat's project folder; a known chat whose folder matches the transcript folder; `CLAUDE_PROJECT_DIR`; the shortest working folder seen for that transcript folder. Sub-folders are never separate projects. At startup ccmail repairs stored data: it realigns sessions, removes projects with no sessions or chats, and keeps your per-project switches.
-- **Activity view.** `GET /v1/projects?chats=N` returns the 5 newest non-archived chats per project by default (`chats=0` = all); archived chats are listed separately. `GET /v1/diagnostics` and `ccmail diagnose` (read-only) show what ccmail can see: metadata locations, chat and session counts.
-- **Per-project switch.** `PUT /v1/projects/enabled` turns a project on or off. When a project is off, ccmail sends no mail and no wake-ups for it. `ccmail status --cwd <folder>` shows that project's switch.
-- **Session states** are stated only as far as the evidence goes: *Al lavoro* (working; "no signal" after a long silence), *In attesa di te* (finished its turn, only if recent), *Attende i processi in background*, *Controllo periodico*, *Inattiva* (idle for more than 6 hours), *Terminata*, *Archiviata*, *Nessun segnale* (stale), *Stato non certo* (uncertain).
+Each mail has a header (project, account, chat, device), the outcome, background processes, **suggested commands**
+tailored to the message (paste one into the chat), and – if reply control is on – instructions to reply.
 
-The desktop app's metadata format is internal and undocumented: if it changes, ccmail reads nothing from it and falls back to hook data (it never fails because of it).
+### Settings web app
+
+`ccmail open` shows: an overview with health checks; rules (what, how often, how much text); an activity view with
+**per-project on/off switches** and the latest chats; and the connection page with provider presets and a test button.
+It listens on `127.0.0.1` only, with a one-time sign-in link, CSRF protection and a strict CSP. The page is in
+Italian; mails and the command line follow the `language` setting (`auto`, `it`, `en`).
+
+### Reply by mail
+
+Off by default (web app → Regole → Comandi suggeriti e risposta via email). When on, ccmail reads your mailbox over
+IMAP and accepts only replies that: come from you, are verified by the provider, quote a valid reference from a recent
+ccmail mail, and start with `OFF`, `ON` or `PAUSE [minutes]`. Optionally, any other reply text is delivered to the chat
+the mail came from. See [SECURITY.md](SECURITY.md) for the exact rules.
+
+### The `/mail-notify` skill
+
+`ccmail install-skill` copies a small skill to `~/.claude/skills/mail-notify/`. It lets you type `/mail-notify on`,
+`off`, `status`, `test` or `open` in Claude Code and tells Claude how to behave during long processes (concise status,
+short final summary). It never reads credentials or settings.
+
+## Several computers
+
+Every computer has its own daemon, data folder and credentials, and its own copy of the settings. Give each one a
+name (`ccmail init`, or web app → Connessione → *Nome di questo dispositivo*) and it appears as `Device:` in the mails.
+A reply is applied by the daemon that sent the mail it refers to; daemons ignore references they did not issue.
+
+## Platforms
+
+| | Windows | macOS | Linux |
+|---|---|---|---|
+| Data folder | `%APPDATA%\ccmail` | `~/Library/Application Support/ccmail` | `~/.config/ccmail` |
+| Password store | Credential Manager (fallback: DPAPI file) | Keychain (fallback: 0600 file) | Secret Service via `secret-tool` (fallback: 0600 file) |
+| Start at logon | Task Scheduler | LaunchAgent | `systemd --user` (fallback: XDG autostart) |
+| Status | tested | beta | beta |
+
+The fallback files are announced loudly by `init`, `status`, `doctor` and the web app. On Linux install
+`libsecret-tools` to use the Secret Service. Claude Code's folder honours `CLAUDE_CONFIG_DIR`.
+
+## Privacy and security
+
+- ccmail reads only what Claude Code hands to its hooks, the desktop app's chat titles and folders, and – for your
+  account name – the display name from `~/.claude.json`. Nothing else in that file is used.
+- Message text is redacted for common secrets before it is put in a mail; `title` and `minimal` content modes send
+  no model-written text at all.
+- The password is never written to logs, the database, the repository or the web app; the API never returns it.
+- The daemon binds to `127.0.0.1`, authenticates hooks with a file-based token and checks `Host`/`Origin`.
+
+Details and the threat model: [SECURITY.md](SECURITY.md). Report vulnerabilities privately (see that file).
+
+## Troubleshooting
+
+| Symptom | Try |
+|---|---|
+| No mail arrives | `ccmail doctor --network`, then `ccmail test`; check spam; check the app password |
+| Hooks do nothing | `ccmail install-hooks`, then restart Claude Code; `ccmail doctor` flags a moved Python |
+| Chat names missing | `ccmail diagnose` shows where the desktop app's metadata is looked for |
+| Port busy | The daemon picks a free port by itself; hooks and CLI read it from `daemon.json` |
+| Reply by mail is slow | Most of the delay is the provider delivering mail to yourself (seconds to ~25 s) |
+| Linux: password in a file | Install `libsecret-tools` and run `ccmail init` again |
 
 ## Commands
 
-`init`, `on`, `off`, `status` (`--cwd <folder>` also shows that project's switch), `test`, `open`, `stop`, `daemon`, `diagnose` (read-only report of what ccmail sees in the desktop app), `install-hooks`, `uninstall-hooks`, `migrate` (removes the old `email_notify.py` hooks without reading its credential file).
+`init` · `on` · `off` · `status [--cwd DIR]` · `test` · `open` · `stop` · `doctor [--network]` · `install-hooks
+[--autostart]` · `uninstall-hooks [--autostart]` · `install-skill` · `uninstall-skill` · `diagnose` · `trace on|off|show`
+· `migrate` · `daemon [--foreground]`. If `ccmail` is not on `PATH`, use `python -m ccmail …`.
+
+## How it works
+
+Hooks run a tiny client (`python -m ccmail hook`) that forwards the event to the local daemon and always exits 0; the
+daemon applies the rules, writes to SQLite, and an outbox worker sends mail with retries. More in
+[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
 
 ## Development
 
-```powershell
-$env:PYTHONPATH="src;tests"; python -m unittest discover -s tests
+```bash
+git clone https://github.com/lobascioemanuele-droid/ccmail && cd ccmail
+python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e .
+python -W ignore -m unittest discover -s tests     # set PYTHONPATH=src:tests if not installed
 ```
 
-See [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE).

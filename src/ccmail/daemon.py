@@ -35,6 +35,19 @@ def import_spool(db):
             f.unlink(missing_ok=True)
 
 
+def _ccmail_answers(port: int, token: str) -> bool:
+    """True if a ccmail daemon (one that accepts our token) is listening on the port."""
+    import http.client
+    try:
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        c.request("GET", "/v1/status", headers={"Authorization": f"Bearer {token}"})
+        ok = c.getresponse().status == 200
+        c.close()
+        return ok
+    except OSError:
+        return False
+
+
 def run(foreground=False, port=None) -> int:
     _setup_logging(foreground)
     db = DB(paths.db_path())
@@ -49,11 +62,20 @@ def run(foreground=False, port=None) -> int:
     def shutdown():
         threading.Thread(target=holder["srv"].shutdown, daemon=True).start()
 
+    want = settings["port"] if port is None else port
     try:
-        srv = Server(("127.0.0.1", settings["port"] if port is None else port), db, auth.Auth(token), worker, shutdown)
+        srv = Server(("127.0.0.1", want), db, auth.Auth(token), worker, shutdown)
     except OSError:
-        log.error("port busy: another ccmail daemon is probably running")
-        return 1
+        if _ccmail_answers(want, token):
+            log.error("port %d: a ccmail daemon is already running", want)
+            return 1
+        log.warning("port %d is taken by another program: picking a free port (clients read it from daemon.json)",
+                    want)
+        try:
+            srv = Server(("127.0.0.1", 0), db, auth.Auth(token), worker, shutdown)
+        except OSError:
+            log.error("no free local port available")
+            return 1
     holder["srv"] = srv
     paths.info_path().write_text(json.dumps({"pid": os.getpid(), "port": srv.server_address[1]}), encoding="utf-8")
     if settings["enabled"]:

@@ -18,13 +18,13 @@ def ev(name, sid="cli-1", cwd="C:/w/progetto/sub", **kw):
 
 class ChatLinkTests(TmpHome):
     def test_scan_reads_only_what_it_needs_and_links_the_session(self):
-        self.add_chat(title="Revisione  report   Oropan", root="C:\\w\\Progetto")
+        self.add_chat(title="Revisione  report   Acme", root="C:\\w\\Progetto")
         policy.handle_event(self.db, ev("UserPromptSubmit"), now=T0)
         s = self.db.one("SELECT * FROM sessions WHERE session_id='cli-1'")
         self.assertEqual(s["chat_id"], "local_aaaa")
         self.assertEqual(s["project"], "Progetto")              # chat's project, not the 'sub' cwd
         self.assertEqual(s["project_dir"], "c:/w/progetto")
-        self.assertEqual(self.db.chat_title(s), "Revisione report Oropan")
+        self.assertEqual(self.db.chat_title(s), "Revisione report Acme")
 
     def test_session_started_before_the_chat_file_is_linked_later(self):
         policy.handle_event(self.db, ev("UserPromptSubmit"), now=T0)

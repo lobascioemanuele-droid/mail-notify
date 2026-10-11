@@ -1,11 +1,11 @@
 """What ccmail can see of the desktop app and of Claude Code, so problems are diagnosed with facts."""
 from pathlib import Path
 
-from . import chats
+from . import chats, paths
 
 
 def _transcripts() -> dict:
-    root = Path.home() / ".claude" / "projects"
+    root = paths.claude_dir() / "projects"
     out = {"root": str(root), "exists": root.is_dir(), "folders": []}
     if root.is_dir():
         for d in sorted(root.iterdir()):

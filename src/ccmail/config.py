@@ -17,6 +17,8 @@ DEFAULTS = {
     "smtp_port": 465,
     "smtp_security": "ssl",          # ssl | starttls
     "recipient": "",
+    "language": "auto",              # auto (system locale) | it | en: mails and CLI texts
+    "device_name": "",               # optional, shown as "Dispositivo:" when you use ccmail on several PCs
     "account_name": "",              # shown in every mail as "Account:"; empty = Windows user name
     "content_mode": "summary",       # summary | full | title | minimal
     "max_body_chars": 1500,          # full mode: truncation of the whole message
@@ -109,6 +111,8 @@ VALIDATORS = {
     "smtp_security": _choice("ssl", "starttls"),
     "recipient": _recipient,
     "account_name": _name,
+    "device_name": _name,
+    "language": _choice("auto", "it", "en"),
     "content_mode": _choice("summary", "full", "title", "minimal"),
     "max_body_chars": _int(200, 5000),
     "summary_chars": _int(100, 3000),

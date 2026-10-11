@@ -7,13 +7,13 @@ from ccmail import credstore, inbound
 from helpers import TmpHome
 
 NOW = 1_800_000_000.0
-ME = "emanuele@gmail.com"
+ME = "alice@gmail.com"
 
 
 def reply(first_line="OFF", ref=None, sender=ME, auth="mx.google.com; dkim=pass header.i=@gmail.com; spf=pass",
           mid="<m1@x>", quoted=True):
     m = EmailMessage()
-    m["From"] = f"Emanuele <{sender}>"
+    m["From"] = f"Alice <{sender}>"
     m["To"] = ME
     m["Subject"] = "Re: [Claude Code] demo: task completato"
     m["Message-ID"] = mid

@@ -55,11 +55,14 @@ def start_daemon() -> None:
     w = os.path.join(os.path.dirname(exe), "pythonw.exe")
     if os.name == "nt" and os.path.exists(w):
         exe = w
-    flags = 0
+    kw = {}
     if os.name == "nt":
-        flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW)
+        kw["creationflags"] = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                               | subprocess.CREATE_NO_WINDOW)
+    else:
+        kw["start_new_session"] = True  # survive the hook process and the terminal that started Claude Code
     subprocess.Popen([exe, "-m", "ccmail", "daemon"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, creationflags=flags, close_fds=True)
+                     stderr=subprocess.DEVNULL, close_fds=True, **kw)
 
 
 def _spool(payload: dict) -> None:

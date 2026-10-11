@@ -7,8 +7,8 @@ Priority, strongest evidence first:
   4. the shortest `cwd` seen among sessions sharing a transcript folder     -> the project root
   5. the session's own cwd
 Claude Code names a transcript folder after the folder the session started in, with every character
-that is not a letter or digit replaced by '-' (e.g. `C:\\Users\\Lobas\\oropan - Copia` ->
-`C--Users-Lobas-oropan---Copia`), which is what makes 2 and 4 possible.
+that is not a letter or digit replaced by '-' (e.g. `C:\\Users\\alice\\acme - Copy` ->
+`C--Users-alice-acme---Copy`), which is what makes 2 and 4 possible.
 """
 import re
 

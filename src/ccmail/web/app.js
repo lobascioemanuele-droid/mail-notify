@@ -93,6 +93,11 @@
       help: "Modalità «Messaggio completo»: il testo di Claude viene tagliato oltre questo limite." },
     account_name: { type: "text", label: "Nome dell'account (riga «Account» nelle email)",
       help: "Il nome della persona a cui è affidato questo account/PC: compare in ogni email al posto del nome del computer. Lascia vuoto per usare il nome utente di Windows." },
+    device_name: { type: "text", label: "Nome di questo dispositivo (facoltativo)",
+      help: "Se usi ccmail su più computer con lo stesso indirizzo, compare come riga «Dispositivo» nelle email, così sai da quale arrivano. Vuoto = non mostrato." },
+    language: { type: "select", label: "Lingua di email e comandi suggeriti",
+      options: [["auto", "Automatica (come il sistema)"], ["it", "Italiano"], ["en", "English"]],
+      help: "Vale per le email, per i testi che ccmail manda a Claude e per la riga di comando. Questa pagina resta in italiano." },
     recipient: { type: "email", label: "Destinatario",
       help: "A chi arrivano le email. Lascia vuoto per riceverle all'indirizzo del mittente (cioè a te stesso)." },
     smtp_host: { type: "host", label: "Server SMTP", help: "Per Gmail: smtp.gmail.com." },
@@ -106,7 +111,7 @@
   const CONN_KEYS = ["recipient", "smtp_host", "smtp_port", "smtp_security"];
   const BG_KEYS = ["heartbeat_mode", "heartbeat_minutes"];
   const MAIL_EXTRA_KEYS = ["suggestions_enabled", "inbound_enabled", "inbound_to_claude", "inbound_ack"];
-  const SETTING_KEYS = [...NOISE_KEYS, ...BG_KEYS, ...MAIL_EXTRA_KEYS, "account_name", "summary_chars", "max_body_chars", "content_mode", "events_enabled", "notify_types", ...CONN_KEYS];
+  const SETTING_KEYS = [...NOISE_KEYS, ...BG_KEYS, ...MAIL_EXTRA_KEYS, "account_name", "device_name", "language", "summary_chars", "max_body_chars", "content_mode", "events_enabled", "notify_types", ...CONN_KEYS];
 
   // ------------------------------------------------------------------ formatting
   const nf = new Intl.NumberFormat(LOCALE);
@@ -514,16 +519,21 @@
       h("span", { class: "h-ico" }, icon(ic), h("span", { class: "sr", text: { ok: "OK", warn: "Attenzione", bad: "Problema", neutral: "Info" }[st] + ": " })),
       h("div", { class: "h-body" }, h("span", { class: "h-title", text: title }), detail ? h("span", { class: "h-detail", text: detail }) : null, extra || null));
   }
+  function backendLabel(b) {
+    return ({ "credential-manager": "Gestione credenziali di Windows", "keychain": "Portachiavi di macOS",
+      "secret-service": "Secret Service (Linux)", "dpapi-file": "File cifrato DPAPI (riserva)",
+      "plain-file": "File con permessi 0600, non cifrato (riserva)" })[b] || b || "—";
+  }
   function renderHealth(ov) {
     const c = ov.credentials || {};
     const items = [];
     items.push(healthItem("ok", "Demone in esecuzione", "ccmail " + ov.version + " risponde su " + location.host + "."));
     if (!c.configured) {
       items.push(healthItem("bad", "Credenziali non configurate", "Serve l'indirizzo Gmail e una password per le app. Esegui in un terminale:", cmdBox("ccmail init")));
-    } else if (c.backend === "dpapi-file") {
-      items.push(healthItem("warn", "Credenziali nel file di riserva", "Mittente " + (c.sender || "?") + ". La Gestione credenziali di Windows non era disponibile: la password è in un file cifrato DPAPI. Funziona, ma è meno protetta. Per riprovare:", cmdBox("ccmail init")));
+    } else if (c.backend === "dpapi-file" || c.backend === "plain-file") {
+      items.push(healthItem("warn", "Credenziali nel file di riserva", "Mittente " + (c.sender || "?") + ". L'archivio sicuro del sistema non era disponibile: la password è in un file riservato al tuo utente. Funziona, ma è meno protetta. Per riprovare:", cmdBox("ccmail init")));
     } else {
-      items.push(healthItem("ok", "Credenziali configurate", "Mittente " + (c.sender || "?") + " · Gestione credenziali di Windows."));
+      items.push(healthItem("ok", "Credenziali configurate", "Mittente " + (c.sender || "?") + " · " + backendLabel(c.backend) + "."));
     }
     items.push(ov.hooks_installed
       ? healthItem("ok", "Hook di Claude Code installati", "Claude Code avvisa ccmail a ogni evento.")
@@ -617,7 +627,7 @@
       if (typeof v !== "number" || !Number.isInteger(v)) return "Inserisci un numero intero.";
       if (v < f.min || v > f.max) return "Inserisci un valore tra " + nf.format(f.min) + " e " + nf.format(f.max) + ".";
     }
-    if (k === "account_name" && (typeof v !== "string" || v.trim().length > 60)) return "Al massimo 60 caratteri.";
+    if ((k === "account_name" || k === "device_name") && (typeof v !== "string" || v.trim().length > 60)) return "Al massimo 60 caratteri.";
     if (f.type === "email" && v !== "" && (!/^[^@\s,;<>]+@[^@\s,;<>]+$/.test(v) || v.length > 254)) return "Indirizzo email non valido.";
     if (f.type === "host" && !/^[A-Za-z0-9.-]{1,253}$/.test(v)) return "Nome del server non valido (solo lettere, numeri, punti e trattini).";
     return null;
@@ -728,6 +738,8 @@
     if (k === "content_mode") return d === "summary" ? "riassunto" : d === "full" ? "messaggio completo" : d === "minimal" ? "minimo" : "solo titolo";
     if (k === "recipient") return d === "" ? "vuoto" : d;
     if (k === "account_name") return d === "" ? "nome dell'account Claude" : d;
+    if (k === "device_name") return d === "" ? "non mostrato" : d;
+    if (k === "language") return d === "auto" ? "automatica" : d === "it" ? "italiano" : "English";
     if (typeof d === "boolean") return d ? "attivo" : "spento";
     if (k === "smtp_security") return d === "ssl" ? "SSL/TLS" : "STARTTLS";
     if (k === "heartbeat_mode") return d === "hook" ? "automatico dal demone" : d === "skill" ? "lo programma Claude" : "mai";
@@ -1118,8 +1130,7 @@
     if (!ov) return;
     const c = ov.credentials || {};
     const kv = $("#cred-kv");
-    const backend = c.backend === "credential-manager" ? "Gestione credenziali di Windows"
-      : c.backend === "dpapi-file" ? "File cifrato DPAPI (riserva)" : "—";
+    const backend = c.backend ? backendLabel(c.backend) : "—";
     const row = (k, v, badge) => [h("dt", { text: k }), h("dd", null, badge || v)];
     kv.replaceChildren(
       ...row("Stato", null, c.configured ? h("span", { class: "badge b-good", text: "Configurate" }) : h("span", { class: "badge b-bad", text: "Non configurate" })),
@@ -1129,7 +1140,7 @@
     const note = $("#cred-note");
     note.replaceChildren();
     if (!c.configured) note.append(h("div", { class: "banner banner-bad small" }, icon("alert"), h("p", { text: "Nessuna credenziale: le email non possono partire. Segui i passaggi qui sotto e poi esegui «ccmail init»." })));
-    else if (c.backend === "dpapi-file") note.append(h("div", { class: "banner banner-warn small" }, icon("alert"), h("p", { text: "La Gestione credenziali di Windows non era disponibile, quindi la password è in un file cifrato con DPAPI legato al tuo utente. Funziona, ma è una soluzione di riserva: riesegui «ccmail init» per riprovare a usare Gestione credenziali." })));
+    else if (c.backend === "dpapi-file" || c.backend === "plain-file") note.append(h("div", { class: "banner banner-warn small" }, icon("alert"), h("p", { text: "L'archivio sicuro del sistema non era disponibile, quindi la password è in un file riservato al tuo utente (" + backendLabel(c.backend) + "). Funziona, ma è una soluzione di riserva: riesegui «ccmail init» per riprovare a usare l'archivio sicuro." })));
     const to = (state.settings && state.settings.values.recipient) || ov.recipient || c.sender;
     $("#test-to").textContent = to || "(nessun destinatario)";
     const tb = $("#test-btn");
@@ -1166,11 +1177,18 @@
     }
   }
   function applyPreset(p) {
-    const presets = { "gmail-ssl": ["smtp.gmail.com", 465, "ssl"], "gmail-tls": ["smtp.gmail.com", 587, "starttls"] };
+    const presets = {
+      "gmail-ssl": ["smtp.gmail.com", 465, "ssl", "imap.gmail.com"],
+      "gmail-tls": ["smtp.gmail.com", 587, "starttls", "imap.gmail.com"],
+      "outlook": ["smtp-mail.outlook.com", 587, "starttls", "outlook.office365.com"],
+      "icloud": ["smtp.mail.me.com", 587, "starttls", "imap.mail.me.com"],
+      "yahoo": ["smtp.mail.yahoo.com", 465, "ssl", "imap.mail.yahoo.com"],
+    };
     const v = presets[p];
     if (!v) return;
     [state.draft.smtp_host, state.draft.smtp_port, state.draft.smtp_security] = v;
-    for (const k of ["smtp_host", "smtp_port", "smtp_security"]) setErr(k, null);
+    if (state.draft.imap_host !== undefined) state.draft.imap_host = v[3];
+    for (const k of ["smtp_host", "smtp_port", "smtp_security", "imap_host"]) setErr(k, null);
     syncAllControls();
     afterDraftChange();
     toast("Preimpostazione applicata: premi Salva per confermare.");
@@ -1768,7 +1786,7 @@
     $("#bg-fields").replaceChildren(...BG_KEYS.map(buildField));
     $("#content-fields").replaceChildren(buildField("summary_chars"), buildField("max_body_chars"));
     $("#mail-extra-fields").replaceChildren(...MAIL_EXTRA_KEYS.map(buildField));
-    $("#conn-fields").replaceChildren(buildField("account_name"), ...CONN_KEYS.map(buildField));
+    $("#conn-fields").replaceChildren(buildField("account_name"), buildField("device_name"), buildField("language"), ...CONN_KEYS.map(buildField));
     buildEventsList();
     buildNtypes();
     const nt = $("#sim-ntype");

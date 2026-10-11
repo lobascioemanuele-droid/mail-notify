@@ -149,7 +149,7 @@ class AckMailTests(TmpHome):
 
     def test_rejected_or_ignored_messages_get_no_ack(self):
         evil = reply("OFF", self.ref, sender="evil@example.com", mid="<e>")
-        own = chr(10).join(["Progetto: demo", "Account: Lobas", "Chat: x"])  # ccmail's own mail text, unquoted
+        own = chr(10).join(["Progetto: demo", "Account: alice", "Chat: x"])  # ccmail's own mail text, unquoted
         prose = reply(own, self.ref, mid="<p>")
         self.poll([evil, prose])
         self.assertEqual(self.acks(), [])

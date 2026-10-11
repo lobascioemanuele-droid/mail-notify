@@ -8,12 +8,12 @@ from ccmail import chats, policy, projroot
 from helpers import TmpHome
 
 T0 = 1_800_000_000.0
-ROOT = "C:\\Users\\Lobas\\oropan - Copia"
-TDIR = "C--Users-Lobas-oropan---copia"
+ROOT = "C:\\Users\\alice\\acme - Copy"
+TDIR = "C--Users-alice-acme---copy"
 
 
 def hook(name, sid, cwd=ROOT, tpath=None, **kw):
-    tpath = tpath or f"C:/Users/Lobas/.claude/projects/{TDIR}/{sid}.jsonl"
+    tpath = tpath or f"C:/Users/alice/.claude/projects/{TDIR}/{sid}.jsonl"
     return {"hook_event_name": name, "session_id": sid, "cwd": cwd, "transcript_path": tpath, **kw}
 
 
@@ -87,38 +87,38 @@ class ProjectResolutionTests(TmpHome):
         policy.handle_event(self.db, hook("UserPromptSubmit", "s1", cwd=ROOT), now=T0)
         policy.handle_event(self.db, hook("UserPromptSubmit", "s2", cwd=ROOT + "\\uscite"), now=T0 + 5)
         names = {r["project"] for r in self.db.q("SELECT project FROM sessions")}
-        self.assertEqual(names, {"oropan - Copia"})
-        self.assertEqual([r["name"] for r in self.db.q("SELECT name FROM projects")], ["oropan - Copia"])
+        self.assertEqual(names, {"acme - Copy"})
+        self.assertEqual([r["name"] for r in self.db.q("SELECT name FROM projects")], ["acme - Copy"])
 
     def test_subfolder_first_is_corrected_when_the_root_appears(self):
         policy.handle_event(self.db, hook("UserPromptSubmit", "s2", cwd=ROOT + "\\uscite"), now=T0)
         self.assertEqual(self.db.one("SELECT project FROM sessions")["project"], "uscite")  # best guess so far
         policy.handle_event(self.db, hook("UserPromptSubmit", "s1", cwd=ROOT), now=T0 + 5)
-        self.assertEqual({r["project"] for r in self.db.q("SELECT project FROM sessions")}, {"oropan - Copia"})
+        self.assertEqual({r["project"] for r in self.db.q("SELECT project FROM sessions")}, {"acme - Copy"})
 
     def test_known_chat_decides_the_project_even_for_unlinked_sessions(self):
         self.add_chat("local_a", "cli-a", "Chat A", ROOT)
         policy.handle_event(self.db, hook("UserPromptSubmit", "orphan", cwd=ROOT + "\\uscite"), now=T0)
         s = self.db.one("SELECT * FROM sessions WHERE session_id='orphan'")
-        self.assertEqual(s["project"], "oropan - Copia")
+        self.assertEqual(s["project"], "acme - Copy")
         self.assertIsNone(s["chat_id"])
 
     def test_repair_realigns_old_rows_and_drops_ghost_projects(self):
         self.db.touch_session("old1", ROOT, T0, transcript_path=f"C:/x/.claude/projects/{TDIR}/old1.jsonl")
         self.db.touch_session("old2", ROOT + "\\uscite", T0, transcript_path=f"C:/x/.claude/projects/{TDIR}/old2.jsonl")
-        self.db.x("UPDATE sessions SET project='uscite', project_dir='c:/users/lobas/oropan - copia/uscite' "
+        self.db.x("UPDATE sessions SET project='uscite', project_dir='c:/users/alice/acme - copy/uscite' "
                   "WHERE session_id='old2'")
-        self.db.x("INSERT INTO projects(project_dir, name, enabled) VALUES('c:/users/lobas/oropan - copia/uscite',"
+        self.db.x("INSERT INTO projects(project_dir, name, enabled) VALUES('c:/users/alice/acme - copy/uscite',"
                   "'uscite',1)")
         res = projroot.repair(self.db, now=T0)
         self.assertGreaterEqual(res["sessions_realigned"], 1)
-        self.assertEqual({r["project"] for r in self.db.q("SELECT project FROM sessions")}, {"oropan - Copia"})
+        self.assertEqual({r["project"] for r in self.db.q("SELECT project FROM sessions")}, {"acme - Copy"})
         self.assertNotIn("uscite", [r["name"] for r in self.db.q("SELECT name FROM projects")])
 
     def test_repair_keeps_a_disabled_switch(self):
         self.db.touch_session("old1", ROOT, T0)
         projroot.repair(self.db, now=T0)
-        self.db.set_project_enabled(ROOT, "oropan - Copia", False, T0)
+        self.db.set_project_enabled(ROOT, "acme - Copy", False, T0)
         projroot.repair(self.db, now=T0)
         self.assertFalse(self.db.project_enabled(ROOT))
 

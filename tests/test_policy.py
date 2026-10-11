@@ -78,7 +78,7 @@ class PolicyTests(TmpHome):
         self.enable(T0 - 1000)
         self.db.set_settings({"content_mode": "minimal"})
         policy.handle_event(self.db, prompt(), now=T0)
-        policy.handle_event(self.db, stop(msg="Dettaglio riservato Oropan"), now=T0 + 500)
+        policy.handle_event(self.db, stop(msg="Dettaglio riservato Acme"), now=T0 + 500)
         row = self.queued()[0]
         self.assertEqual(row["subject"], "[Claude Code] proj: task completato")
         self.assertNotIn("riservato", row["subject"] + row["body"])

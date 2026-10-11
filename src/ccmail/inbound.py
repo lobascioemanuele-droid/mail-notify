@@ -24,14 +24,14 @@ import time
 from email import policy as email_policy
 from email.utils import parseaddr
 
-from . import credstore
+from . import credstore, i18n
 from .db import leaf_name
 
 log = logging.getLogger("ccmail.inbound")
 REF_RE = re.compile(r"\bccm-[0-9a-f]{12}\b")
 OFF_WORDS = {"OFF", "SPEGNI", "DISATTIVA", "STOP"}
 ON_WORDS = {"ON", "ACCENDI", "ATTIVA", "RIATTIVA"}
-PAUSE_WORDS = {"PAUSA", "SNOOZE"}
+PAUSE_WORDS = {"PAUSA", "PAUSE", "SNOOZE"}
 MAX_TEXT = 20_000
 MAX_PER_POLL = 20   # messages processed per pass
 MAX_SCAN = 200      # newest matching messages looked at (header only) per pass
@@ -168,7 +168,7 @@ def handle_message(db, msg, expected_from: str, now=None, trusted_sent: bool = F
 
     if cmd is None:
         first = next((ln.strip() for ln in text.splitlines() if ln.strip() and not ln.strip().startswith(">")), "")
-        if first.startswith("Progetto:") and "Account:" in text[:400]:
+        if first.startswith(("Progetto:", "Project:")) and "Account:" in text[:400]:
             # the body is ccmail's own mail text (an unquoted reply/forward, or our own notification)
             return done("ignored:no_command", "testo di una email di ccmail: nessuna istruzione")
         if not (to_claude and project and _is_reply(msg)):
@@ -193,15 +193,19 @@ def handle_message(db, msg, expected_from: str, now=None, trusted_sent: bool = F
         if info is not None:
             info.update(kind="command", command=cmd[0], project_name=name, project_dir=project, ref=ref,
                         session_id=db.ref_session(ref),
-                        detail=f"Le notifiche del progetto «{name}» sono state " +
-                               ("riattivate." if cmd[0] == "on" else "disattivate."))
+                        detail=i18n.pick(db.get_settings(),
+                                         f"Le notifiche del progetto «{name}» sono state "
+                                         + ("riattivate." if cmd[0] == "on" else "disattivate."),
+                                         f"Notifications for project «{name}» were turned "
+                                         + ("back on." if cmd[0] == "on" else "off.")))
         return done("ok:project_" + cmd[0], f"{cmd[0].upper()} → {name}")
     until = now + cmd[1] * 60
     db.set_settings({"snooze_until": until})
     if info is not None:
         info.update(kind="command", command="pause", project_name="", project_dir=project, ref=ref,
                     session_id=db.ref_session(ref),
-                    detail=f"Notifiche in pausa per {cmd[1]} minuti su tutti i progetti.")
+                    detail=i18n.pick(db.get_settings(), f"Notifiche in pausa per {cmd[1]} minuti su tutti i progetti.",
+                                     f"Notifications paused for {cmd[1]} minutes on all projects."))
     return done("ok:pause", f"PAUSA {cmd[1]} min")
 
 

@@ -2,6 +2,27 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.6.0
+
+### Added
+- **Cross-platform daemon**: data folders for Windows, macOS and Linux; credentials in Windows Credential Manager,
+  macOS Keychain or Linux Secret Service (password through stdin only), with an announced 0600-file fallback;
+  autostart through Task Scheduler, LaunchAgent or `systemd --user` (XDG autostart as last resort).
+- Provider presets (Gmail, Outlook/Microsoft 365, iCloud, Yahoo, custom) in `ccmail init` and the web app.
+- `language` setting (`auto`/`it`/`en`): mails, suggested commands, messages delivered to Claude and the command line.
+  `PAUSE` is accepted next to `PAUSA`.
+- `device_name` setting: a `Device:` line in mails when ccmail runs on several computers.
+- `ccmail doctor [--network]`: installation check that prints no secrets (credentials, hooks, interpreter, skill,
+  autostart, daemon, mail servers).
+- `ccmail install-skill` / `uninstall-skill`: the `mail-notify` skill ships inside the package.
+- `CLAUDE_CONFIG_DIR` is honoured for settings, skills, transcripts and the account name.
+- The daemon picks a free port when the configured one is taken by another program.
+- Community files, CI matrix (Windows/macOS/Linux x Python 3.10-3.13), release workflow with PyPI trusted publishing.
+
+### Changed
+- Detached daemon start on POSIX uses a new session; `pythonw.exe` only on Windows.
+- The design notes moved from the README to `docs/HOW-IT-WORKS.md`; working notes to `docs/dev/`.
+
 ## 0.5.0
 
 ### Added

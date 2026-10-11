@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__, activity, chats, config, credstore, diagnostics, installer, mailer, policy
+from . import __version__, activity, chats, config, credstore, diagnostics, i18n, installer, mailer, policy
 from .db import norm_dir, set_enabled
 from .heartbeat import Heartbeat, reply_message, wake_message
 
@@ -51,7 +51,7 @@ def take_pending_replies(db, sid, via):
     db.add_event(now, sid, "InboundDelivered", "", f"{len(pend)} messaggio/i consegnato/i a Claude ({via})",
                  "ok:delivered")
     db.set_session(sid, state="active")  # Claude is about to work on it
-    return reply_message(texts) if texts else None
+    return reply_message(texts, i18n.resolve(db.get_settings())) if texts else None
 
 
 class Server(ThreadingHTTPServer):
@@ -221,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
             return {"wake": False}
         # Claude is about to work again: show it as working until its next Stop
         db.set_session(sid, heartbeat_pending=1, state="active")
-        return {"wake": True, "message": wake_message(s["heartbeat_minutes"], tasks)}
+        return {"wake": True, "message": wake_message(s["heartbeat_minutes"], tasks, i18n.resolve(s))}
 
     def _route(self, method, path, who):
         db, srv = self.server.db, self.server
@@ -427,8 +427,8 @@ def status_dict(db) -> dict:
     except Exception:
         pass
     warnings = []
-    if cred and cred[1] != credstore.BACKEND_CREDMAN:
-        warnings.append("Credenziali nel file DPAPI di fallback: Credential Manager non disponibile.")
+    if cred and not credstore.is_secure(cred[1]):
+        warnings.append("Credenziali nel file di riserva: l'archivio sicuro del sistema non è disponibile.")
     if not cred:
         warnings.append("Credenziali non configurate: esegui 'ccmail init' in un terminale.")
     try:

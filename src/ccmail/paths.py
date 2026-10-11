@@ -1,21 +1,36 @@
 """Filesystem locations. CCMAIL_HOME overrides the data dir (used by tests)."""
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 DEFAULT_PORT = 47821
 
 
+def default_data_dir(system: str, env, home: Path) -> Path:
+    """Where ccmail keeps its data on `system` ('windows' | 'darwin' | 'linux'); pure, so it is testable anywhere."""
+    if system == "windows":
+        return Path(env.get("APPDATA") or home / "AppData" / "Roaming") / "ccmail"
+    if system == "darwin":
+        return home / "Library" / "Application Support" / "ccmail"
+    return Path(env.get("XDG_CONFIG_HOME") or home / ".config") / "ccmail"
+
+
+def _system() -> str:
+    return "windows" if os.name == "nt" else "darwin" if sys.platform == "darwin" else "linux"
+
+
 def data_dir() -> Path:
     override = os.environ.get("CCMAIL_HOME")
-    if override:
-        p = Path(override)
-    elif os.name == "nt":
-        p = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "ccmail"
-    else:
-        p = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "ccmail"
+    p = Path(override) if override else default_data_dir(_system(), os.environ, Path.home())
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def claude_dir() -> Path:
+    """Claude Code's own config folder (~/.claude, or CLAUDE_CONFIG_DIR when the user relocated it)."""
+    override = os.environ.get("CLAUDE_CONFIG_DIR")
+    return Path(override) if override else Path.home() / ".claude"
 
 
 def db_path() -> Path:

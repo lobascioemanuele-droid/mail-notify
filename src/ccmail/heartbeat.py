@@ -76,8 +76,15 @@ class Heartbeat:
         return self.wait_for(sid, seconds, listen=False) == "elapsed"
 
 
-def wake_message(minutes: int, task_ids) -> str:
+def wake_message(minutes: int, task_ids, lang: str = "it") -> str:
     ids = ", ".join(task_ids[:5]) or "?"
+    if lang == "en":
+        return (f"[ccmail] Periodic check (every {minutes} min): background tasks are still running ({ids}). "
+                "Query their status now with the cheapest command (task output or last log lines), then answer in "
+                "at most 3 lines: status (running/finished/failed), progress as a number, whether I need to step "
+                "in. Do not start other work. If a task finished or failed, close with a 10-15 line summary "
+                "(outcome, key figures, anomalies, produced files, what to do next), without values from "
+                "confidential data rows.")
     return (f"[ccmail] Controllo periodico (ogni {minutes} min): risultano ancora task in background ({ids}). "
             "Interroga ora il loro stato con il comando più economico (output del task o ultime righe del log), "
             "poi rispondi in al massimo 3 righe: stato (in corso/finito/fallito), avanzamento con un numero, "
@@ -86,9 +93,13 @@ def wake_message(minutes: int, task_ids) -> str:
             "senza valori delle righe di dati riservati.")
 
 
-def reply_message(texts) -> str:
+def reply_message(texts, lang: str = "it") -> str:
     """The reminder that carries the user's e-mail reply(ies) into the chat."""
     body = "\n\n---\n".join(t.strip() for t in texts if t and t.strip())
+    if lang == "en":
+        return ("[ccmail] Message from the user received by e-mail (verified sender: it is their reply to a "
+                "ccmail mail). Treat it as their message in this chat and act accordingly, within the usual "
+                "permissions:\n\n" + body)
     return ("[ccmail] Messaggio dell'utente ricevuto via email (mittente verificato: è la sua risposta a una mail di "
             "ccmail). Trattalo come un suo messaggio in questa chat e agisci di conseguenza, rispettando i soliti "
             "permessi:\n\n" + body)

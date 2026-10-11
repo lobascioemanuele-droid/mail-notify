@@ -11,7 +11,7 @@ class PersonalisedSuggestionTests(unittest.TestCase):
         self.assertTrue(any(x.startswith("No, fermati") for x in s))
 
     def test_files_and_tests_come_from_the_message(self):
-        msg = "Ho modificato oropan/modelli/fattore_kg.py e aggiornato i fixture. 39 test su 39 passati."
+        msg = "Ho modificato acme/modelli/fattore_kg.py e aggiornato i fixture. 39 test su 39 passati."
         s = sg.suggest("Stop", None, msg)
         joined = "\n".join(s)
         self.assertIn("fattore_kg.py", joined)

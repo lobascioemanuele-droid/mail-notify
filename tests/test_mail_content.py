@@ -28,15 +28,15 @@ class HeaderTests(TmpHome):
         self.assertNotIn("Host:", m["body"])
 
     def test_account_falls_back_to_windows_user(self):
-        with mock.patch.dict(os.environ, {"USERNAME": "Lobas"}):
-            self.assertIn("Account: Lobas", self.mail()["body"])
+        with mock.patch.dict(os.environ, {"USERNAME": "alice"}):
+            self.assertIn("Account: alice", self.mail()["body"])
 
     def test_account_defaults_to_the_claude_account_name(self):
-        with mock.patch("ccmail.identity.claude_display_name", return_value="Emanuele"),                 mock.patch.dict(os.environ, {"USERNAME": "Lobas"}):
-            self.assertIn("Account: Emanuele", self.mail()["body"])
+        with mock.patch("ccmail.identity.claude_display_name", return_value="Alice"),                 mock.patch.dict(os.environ, {"USERNAME": "alice"}):
+            self.assertIn("Account: Alice", self.mail()["body"])
 
     def test_configured_name_beats_claude_account_name(self):
-        with mock.patch("ccmail.identity.claude_display_name", return_value="Emanuele"):
+        with mock.patch("ccmail.identity.claude_display_name", return_value="Alice"):
             self.assertIn("Account: Mario Rossi", self.mail(account_name="Mario Rossi")["body"])
 
     def test_account_name_validation(self):
@@ -51,7 +51,7 @@ class WatchdogMailTests(TmpHome):
         super().setUp()
         self.enable(0)
         self.db.set_settings({"watchdog_minutes": 15, "heartbeat_minutes": 5, "account_name": "Mario Rossi"})
-        for sid, proj in (("s-uscite-0001", "uscite"), ("s-oropan-0002", "oropan - Copia")):
+        for sid, proj in (("s-uscite-0001", "uscite"), ("s-acme-0002", "acme - Copy")):
             self.db.touch_session(sid, f"C:/w/{proj}", T0)
             self.db.set_session(sid, state="idle", bg_tasks=1, bg_ids=json.dumps(["b1"]))
         self.w = Worker(self.db)
@@ -61,7 +61,7 @@ class WatchdogMailTests(TmpHome):
         rows = self.db.q("SELECT subject, body FROM outbox ORDER BY id")
         self.assertEqual(len(rows), 2)
         self.assertNotEqual(rows[0]["body"], rows[1]["body"])  # was: two identical-looking mails
-        for r, proj, sid in zip(rows, ("uscite", "oropan - Copia"), ("s-uscite-0001", "s-oropan-0002")):
+        for r, proj, sid in zip(rows, ("uscite", "acme - Copy"), ("s-uscite-0001", "s-acme-0002")):
             self.assertIn(f"Progetto: {proj}", r["body"])
             self.assertIn("Account: Mario Rossi", r["body"])
             self.assertIn(f"Sessione: {sid[:8]}\n", r["body"])
@@ -73,7 +73,7 @@ class WatchdogMailTests(TmpHome):
         self.w.watchdog(now=T0 + 20 * 60)
         subjects = [r["subject"] for r in self.db.q("SELECT subject FROM outbox")]
         self.assertEqual(len(subjects), 1)
-        self.assertIn("oropan", subjects[0])
+        self.assertIn("acme", subjects[0])
 
     def test_paused_when_it_would_fire_before_a_heartbeat(self):
         self.db.set_settings({"heartbeat_minutes": 30})  # 15 < 2*30: invalid combination

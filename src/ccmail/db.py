@@ -67,6 +67,8 @@ class DB:
             self._c.execute("ALTER TABLE sessions ADD COLUMN bg_ids TEXT DEFAULT '[]'")
         if "heartbeat_pending" not in cols:
             self._c.execute("ALTER TABLE sessions ADD COLUMN heartbeat_pending INTEGER DEFAULT 0")
+        if "reply_pending" not in cols:  # a turn started by an e-mail reply: its answer is always mailed back
+            self._c.execute("ALTER TABLE sessions ADD COLUMN reply_pending INTEGER DEFAULT 0")
         if "chat_id" not in cols:  # v2 -> v3: link to the desktop app's chat, and the project root
             self._c.execute("ALTER TABLE sessions ADD COLUMN chat_id TEXT")
         if "project_dir" not in cols:

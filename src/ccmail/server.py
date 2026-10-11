@@ -50,7 +50,8 @@ def take_pending_replies(db, sid, via):
     db.mark_inbound_delivered([p["id"] for p in pend], now)
     db.add_event(now, sid, "InboundDelivered", "", f"{len(pend)} messaggio/i consegnato/i a Claude ({via})",
                  "ok:delivered")
-    db.set_session(sid, state="active")  # Claude is about to work on it
+    # Claude is about to work on it; the user is away, so the end of this turn is always mailed back
+    db.set_session(sid, state="active", reply_pending=1)
     return reply_message(texts, i18n.resolve(db.get_settings())) if texts else None
 
 

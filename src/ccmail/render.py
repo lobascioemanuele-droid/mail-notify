@@ -133,7 +133,7 @@ def _cut_whole(text: str, limit: int, settings: dict = None) -> str:
 
 def build(event: str, payload: dict, settings: dict, project: str, elapsed, kind=None, n_bg=0,
           chat_title: str = "", limit_hit: bool = False, ref: str = None, inbound: bool = False,
-          to_claude: bool = False):
+          to_claude: bool = False, reply_turn: bool = False):
     """Return (subject, body). kind: None | 'bg_done' | 'bg_status'; limit_hit: usage limit reached.
 
     The body is split into labelled sections: context, outcome, background processes, suggested
@@ -173,6 +173,10 @@ def build(event: str, payload: dict, settings: dict, project: str, elapsed, kind
         elif kind == "bg_status":
             subject = T(f"[Claude Code] {project}: stato processi in background ({n_bg} attivi)",
                         f"[Claude Code] {project}: background processes status ({n_bg} running)")
+        elif reply_turn:
+            what = done_word if minimal else headline(msg) or done_word
+            subject = T(f"[Claude Code] {project}: risposta alla tua email - {what}",
+                        f"[Claude Code] {project}: answer to your e-mail - {what}")
         else:
             subject = f"[Claude Code] {project}: {done_word if minimal else headline(msg) or done_word}"
         main = shape(msg) if full else ""

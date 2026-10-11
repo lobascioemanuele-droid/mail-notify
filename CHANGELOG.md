@@ -19,6 +19,11 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 - The daemon picks a free port when the configured one is taken by another program.
 - Community files, CI matrix (Windows/macOS/Linux x Python 3.10-3.13), release workflow with PyPI trusted publishing.
 
+### Fixed
+- The answer to a reply sent by e-mail was never mailed back when the turn was short or processes were still running
+  (the user, being away, never saw it). A turn started by an e-mail reply is now always mailed at its end, with the
+  subject "risposta alla tua email"; the per-project switch, snooze and hourly cap still apply.
+
 ### Changed
 - Detached daemon start on POSIX uses a new session; `pythonw.exe` only on Windows.
 - The design notes moved from the README to `docs/HOW-IT-WORKS.md`; working notes to `docs/dev/`.

@@ -80,6 +80,7 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
 
     elapsed = (now - sess["turn_start_at"]) if sess.get("turn_start_at") else None
     kind = None
+    reply_turn = False
     limit_hit = (event in ("Stop", "StopFailure")
                  and suggest.is_usage_limit(str(payload.get("last_assistant_message") or ""),
                                             str(payload.get("error") or "")))
@@ -87,12 +88,15 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
         now_ids = _task_ids(payload)
         prev_ids = json.loads(sess.get("bg_ids") or "[]")
         pending = bool(sess.get("heartbeat_pending"))
+        reply_turn = bool(sess.get("reply_pending"))
         db.set_session(sid, turn_start_at=None, state="idle", bg_tasks=len(now_ids),
-                       bg_ids=json.dumps(now_ids), heartbeat_pending=0)
+                       bg_ids=json.dumps(now_ids), heartbeat_pending=0, reply_pending=0)
         if limit_hit:
             kind = None  # a usage-limit notice outranks every other kind of Stop mail
         elif prev_ids and not now_ids:
             kind = "bg_done"
+        elif reply_turn:
+            kind = None  # the answer to an e-mail reply is mailed even if processes are still running
         elif now_ids:
             interval = s["heartbeat_minutes"] * 60
             last = sess.get("last_sent_at")
@@ -105,15 +109,17 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
     elif event == "SessionEnd":
         db.set_session(sid, turn_start_at=None, state="ended")
 
-    reason = _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind, limit_hit)
+    reason = _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind, limit_hit,
+                   reply_turn=reply_turn)
     if reason:
         return done("skip:" + reason)
     ref = db.new_mail_ref(sess.get("project_dir"), now, sid) if s.get("inbound_enabled") else None
     subject, body = render.build(event, payload, s, sess.get("project") or "", elapsed, kind=kind,
                                  n_bg=len(_task_ids(payload)), chat_title=chat_title, limit_hit=limit_hit,
-                                 ref=ref, inbound=bool(ref), to_claude=bool(s.get("inbound_to_claude")))
+                                 ref=ref, inbound=bool(ref), to_claude=bool(s.get("inbound_to_claude")),
+                                 reply_turn=reply_turn)
     db.set_session(sid, last_sent_at=now)
-    tag = "limit" if limit_hit else kind
+    tag = "limit" if limit_hit else ("reply" if reply_turn and kind is None else kind)
     return done("queued" if tag is None else "queued:" + tag, (subject, body))
 
 
@@ -141,7 +147,8 @@ def simulate(db, event, elapsed_s=None, message="", ntype="", session_id=None, n
     return {"would_send": reason is None, "reason": reason, "subject": subject, "body": body}
 
 
-def _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind=None, limit_hit=False):
+def _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind=None, limit_hit=False,
+          reply_turn=False):
     if not s["enabled"]:
         return "disabled"
     if now < (s.get("snooze_until") or 0):
@@ -157,12 +164,12 @@ def _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind=No
     if event == "Stop" and kind is None and not limit_hit:
         if payload.get("stop_hook_active"):
             return "stop_hook_loop"
-        if elapsed is None or elapsed < s["min_elapsed_s"]:  # unknown duration counts as short
+        if not reply_turn and (elapsed is None or elapsed < s["min_elapsed_s"]):  # unknown duration = short
             return "short_turn"
     if now - (s.get("toggled_at") or 0) < s["mute_after_toggle_s"]:
         return "muted_after_toggle"
     last = sess.get("last_sent_at")
-    if kind is None and not limit_hit and last and now - last < s["cooldown_s"]:
+    if kind is None and not limit_hit and not reply_turn and last and now - last < s["cooldown_s"]:
         return "cooldown"
     if db.sent_last_hour(now) >= s["max_per_hour"]:
         return "hourly_cap"

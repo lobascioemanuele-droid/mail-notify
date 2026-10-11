@@ -22,7 +22,7 @@ Reproduce with `tests/test_matrix.py` and the commands in [How to measure](#how-
 | CPU (daemon, idle, reply channel on) | **≈ 0.25 %** of one core | measured: 0.30 s / 120 s |
 | CPU per hook call | ≈ 0.11 s (interpreter start-up) | measured |
 | Latency added to Claude Code | ≈ 0.12 s per synchronous hook call | measured: median 117 ms, p90 134 ms |
-| Disk | ≈ 0.2 MB database + ≤ 1.5 MB log; 14 days retention | measured |
+| Disk | ≈ 0.2 MB database + ≤ 1.5 MB log; 30 days retention | measured |
 | Network, SMTP | one TLS connection per mail, ≈ 6–10 KB | estimate |
 | Network, IMAP (reply channel on) | ≈ 15 MB/day while it runs | estimate |
 | Mail volume | ≤ `max_per_hour` (10) per hour; typical day: tens | measured: 37 mails on a heavy test day |
@@ -106,7 +106,7 @@ over the turn** and ≈ 2.4 s of CPU in short bursts.
 
 | Item | Size | Bound |
 |---|---|---|
-| `ccmail.db` (+ `-wal`, `-shm`) | ≈ 0.17 MB + ≈ 0.3 MB WAL after 236 events and 37 mails | rows older than 14 days are purged at start |
+| `ccmail.db` (+ `-wal`, `-shm`) | ≈ 0.17 MB + ≈ 0.3 MB WAL after 236 events and 37 mails | rows older than 30 days are purged at start |
 | `ccmail.log` | ≈ 22 KB measured | rotating, 512 KB × 3 files at most |
 | `spool/` | empty unless the daemon is down | at most 200 small files |
 | Credentials | one Credential Manager / Keychain / Secret Service entry (or a ≈ 0.3 KB fallback file) | — |

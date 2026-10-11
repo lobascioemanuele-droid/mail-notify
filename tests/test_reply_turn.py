@@ -51,6 +51,17 @@ class ReplyTurnTests(TmpHome):
         bg = stop(background_tasks=[{"id": "t1"}])
         self.assertEqual(policy.handle_event(self.db, bg, now=T0 + 20), "queued:reply")
 
+    def test_reply_turn_ends_with_stop_hook_active_and_is_still_mailed(self):
+        """The reply reaches the chat through a Stop hook, so its Stop arrives with stop_hook_active=true."""
+        self.queue_reply()
+        policy.handle_event(self.db, prompt(), now=T0 + 2)
+        self.assertEqual(policy.handle_event(self.db, stop(stop_hook_active=True), now=T0 + 20), "queued:reply")
+
+    def test_stop_hook_loop_guard_still_applies_otherwise(self):
+        policy.handle_event(self.db, prompt(), now=T0)
+        self.db.set_settings({"min_elapsed_s": 0})
+        self.assertEqual(policy.handle_event(self.db, stop(stop_hook_active=True), now=T0 + 300), "skip:stop_hook_loop")
+
     def test_project_switch_off_still_wins(self):
         pd = self.db.one("SELECT project_dir FROM sessions WHERE session_id='s1'")["project_dir"]
         self.db.set_project_enabled(pd, "proj", False, T0)

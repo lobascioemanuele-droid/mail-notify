@@ -162,7 +162,9 @@ def _gate(db, s, event, payload, ntype, sess, elapsed, now, received_at, kind=No
     if event == "Notification" and ntype and ntype not in s["notify_types"]:
         return "type_off"
     if event == "Stop" and kind is None and not limit_hit:
-        if payload.get("stop_hook_active"):
+        # A reply is handed to the chat through a Stop hook, so the turn it starts ends with stop_hook_active set:
+        # that is the expected path for a reply (one-shot flag, no loop), not a hook feedback loop.
+        if payload.get("stop_hook_active") and not reply_turn:
             return "stop_hook_loop"
         if not reply_turn and (elapsed is None or elapsed < s["min_elapsed_s"]):  # unknown duration = short
             return "short_turn"

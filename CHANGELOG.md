@@ -22,6 +22,8 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 - Community files, CI matrix (Windows/macOS/Linux x Python 3.10-3.13), release workflow with PyPI trusted publishing.
 
 ### Fixed
+- The answer mail of an e-mail reply was still skipped as a "stop hook loop": the reply reaches the chat through a
+  Stop hook, so its turn ends with `stop_hook_active` set. The guard no longer applies to that one-shot turn.
 - The IMAP scan fetched one header per message each pass; it now asks for all of them in a single command.
 - The answer to a reply sent by e-mail was never mailed back when the turn was short or processes were still running
   (the user, being away, never saw it). A turn started by an e-mail reply is now always mailed at its end, with the

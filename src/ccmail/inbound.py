@@ -352,6 +352,26 @@ class Inbound(threading.Thread):
         finally:
             self._close(M)
 
+    @staticmethod
+    def _message_ids(M, nums) -> dict:
+        """{sequence number (str): Message-ID} for `nums`, fetched with a single command."""
+        if not nums:
+            return {}
+        seq = ",".join(x.decode() if isinstance(x, bytes) else str(x) for x in nums)
+        typ, parts = M.fetch(seq, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])")
+        out = {}
+        if typ != "OK":
+            return out
+        for part in parts or []:
+            if not isinstance(part, tuple):
+                continue
+            m = re.match(rb"\s*(\d+)\s*\(", part[0])
+            if not m:
+                continue
+            h = email.message_from_bytes(part[1], policy=email_policy.default)
+            out[m.group(1).decode()] = str(h.get("Message-ID") or "").strip()[:200]
+        return out
+
     def _scan(self, M, s, since_ts, min_seq: int = 0) -> int:
         """Look at the newest [Claude Code] mails of the open connection (only those with a sequence number
         above `min_seq` when given: the quick path after a new arrival). Returns messages examined."""
@@ -370,13 +390,12 @@ class Inbound(threading.Thread):
             self.last_found = len(nums)
         # SEARCH answers oldest-first: look at the NEWEST ones, and skip what was already handled by
         # fetching only the Message-ID header before the (larger) full message.
-        for num in reversed(nums[-MAX_SCAN:]):
-            typ, hdr = M.fetch(num, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])")
-            if typ == "OK" and hdr and isinstance(hdr[0], tuple):
-                h = email.message_from_bytes(hdr[0][1], policy=email_policy.default)
-                hmid = str(h.get("Message-ID") or "").strip()[:200]
-                if hmid and self.db.one("SELECT 1 FROM inbound_seen WHERE msg_id=?", (hmid,)):
-                    continue
+        newest_first = list(reversed(nums[-MAX_SCAN:]))
+        mids = self._message_ids(M, newest_first)  # ONE round trip for all headers, not one per message
+        for num in newest_first:
+            hmid = mids.get(num.decode() if isinstance(num, bytes) else str(num), "")
+            if hmid and self.db.one("SELECT 1 FROM inbound_seen WHERE msg_id=?", (hmid,)):
+                continue
             if n >= MAX_PER_POLL:
                 break
             typ, parts = M.fetch(num, "(X-GM-LABELS BODY.PEEK[])" if gmail else "(BODY.PEEK[])")

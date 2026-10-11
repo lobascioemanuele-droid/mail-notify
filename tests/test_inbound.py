@@ -96,14 +96,19 @@ class FakeIMAP:
     def login(self, u, p): self.logged = (u, p)
     def select(self, box): return ("OK", [b"1"])
     def search(self, *a): return ("OK", [b" ".join(str(i + 1).encode() for i in range(len(self.raw)))])
+    fetch_calls = 0
+
     def fetch(self, num, what):
-        raw = self.raw[int(num) - 1]
+        type(self).fetch_calls += 1
         if "HEADER.FIELDS" in what:
             import email as _e
-            mid = _e.message_from_bytes(raw).get("Message-ID", "")
-            header = ("Message-ID: " + str(mid) + chr(13) + chr(10) + chr(13) + chr(10)).encode()
-            return ("OK", [(b"1 (BODY[HEADER.FIELDS (MESSAGE-ID)] {0})", header), b")"])
-        return ("OK", [(b"1 (BODY[] {0})", raw), b")"])
+            parts = []
+            for n in str(num).split(","):  # a comma list is answered with one item per message
+                mid = _e.message_from_bytes(self.raw[int(n) - 1]).get("Message-ID", "")
+                header = ("Message-ID: " + str(mid) + chr(13) + chr(10) + chr(13) + chr(10)).encode()
+                parts += [(n.encode() + b" (BODY[HEADER.FIELDS (MESSAGE-ID)] {0})", header), b")"]
+            return ("OK", parts)
+        return ("OK", [(b"1 (BODY[] {0})", self.raw[int(num) - 1]), b")"])
     def store(self, num, *a): self.stored.append(num)
     def logout(self): self.closed = True
 
@@ -305,3 +310,17 @@ class ManyMessagesTests(TmpHome):
         self.assertEqual(n, 1)
         self.assertFalse(self.db.project_enabled("C:/w/demo"))
         self.assertEqual(w.last_found, 61)
+
+
+class BatchedHeaderTests(TmpHome):
+    def test_all_headers_come_in_one_fetch_not_one_per_message(self):
+        self.db.new_mail_ref("C:/w/demo", time.time())  # without a recent reference there is nothing to watch
+        msgs = [reply("hello", "ccm-%012d" % i, mid="<m%d@x>" % i).as_bytes() for i in range(30)]
+        for i in range(30):  # all already handled
+            self.db.x("INSERT INTO inbound_seen(msg_id, at) VALUES(?,?)", ("<m%d@x>" % i, time.time()))
+        fake = FakeIMAP(msgs)
+        FakeIMAP.fetch_calls = 0
+        with mock.patch.object(credstore, "load", return_value=(ME, "pw", "t")):
+            inbound.Inbound(self.db).poll_once({"imap_host": "imap.example.com", "recipient": ""},
+                                               imap_factory=lambda: fake, since_ts=0)
+        self.assertEqual(FakeIMAP.fetch_calls, 1)  # one batched header fetch, no full-message fetch

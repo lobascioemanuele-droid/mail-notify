@@ -17,9 +17,12 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 - `ccmail install-skill` / `uninstall-skill`: the `mail-notify` skill ships inside the package.
 - `CLAUDE_CONFIG_DIR` is honoured for settings, skills, transcripts and the account name.
 - The daemon picks a free port when the configured one is taken by another program.
+- `docs/RESOURCES.md`: measured token, CPU, memory, disk, network and latency costs.
+- Combination tests (`tests/test_matrix.py`): every mail kind x content mode x language x reply options, and policy vs. dry run.
 - Community files, CI matrix (Windows/macOS/Linux x Python 3.10-3.13), release workflow with PyPI trusted publishing.
 
 ### Fixed
+- The IMAP scan fetched one header per message each pass; it now asks for all of them in a single command.
 - The answer to a reply sent by e-mail was never mailed back when the turn was short or processes were still running
   (the user, being away, never saw it). A turn started by an e-mail reply is now always mailed at its end, with the
   subject "risposta alla tua email"; the per-project switch, snooze and hourly cap still apply.

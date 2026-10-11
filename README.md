@@ -138,6 +138,12 @@ Details and the threat model: [SECURITY.md](SECURITY.md). Report vulnerabilities
 [--autostart]` · `uninstall-hooks [--autostart]` · `install-skill` · `uninstall-skill` · `diagnose` · `trace on|off|show`
 · `migrate` · `daemon [--foreground]`. If `ccmail` is not on `PATH`, use `python -m ccmail …`.
 
+## Resource use
+
+No model calls at all in normal operation; the daemon uses ≈ 35 MB and ≈ 0.05–0.25 % of one core, each hook call
+adds ≈ 0.12 s. Tokens are spent only on the skill text, on periodic wake-ups while background tasks run and on delivered
+replies. Measurements, formulas and limits: [docs/RESOURCES.md](docs/RESOURCES.md).
+
 ## How it works
 
 Hooks run a tiny client (`python -m ccmail hook`) that forwards the event to the local daemon and always exits 0; the

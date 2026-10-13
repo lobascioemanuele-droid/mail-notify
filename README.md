@@ -347,7 +347,8 @@ python -W ignore -m unittest discover -s tests
 
 Set `PYTHONPATH=src:tests` first if the package is not installed.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md); what 1.x promises to keep
+stable is in [docs/STABILITY.md](docs/STABILITY.md).
 
 ## License
 

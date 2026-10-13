@@ -2,7 +2,9 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.0.0 - 2026-10-13
+
+First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).
 
 ### Changed (summary)
 - The summary in `summary` mode now covers the whole answer in at most 10 short lines: a lead, one line per

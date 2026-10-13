@@ -2,11 +2,11 @@
 name: mail-notify
 description: Turn Claude Code e-mail notifications on or off, check them, send a test mail or open the settings web app (argument: on, off, status, test, open) through ccmail, and apply the long-running-process rules while they are on
 ---
-<!-- ccmail-skill-version: 0.6.0 -->
+<!-- ccmail-skill-version: 1.0.0 -->
 You manage Claude Code's e-mail notifications with **ccmail** (a local daemon). The skill argument is `$ARGUMENTS`.
 Answer the user in the language they write in.
 
-Run ccmail as `ccmail <command>`. If `ccmail` is not on the PATH, use `python -m ccmail <command>`
+Run ccmail as `ccmail <command>` (the same program is also installed as `mail-notify`). If `ccmail` is not on the PATH, use `python -m ccmail <command>`
 (`py -m ccmail` on Windows).
 
 Allowed commands, one at a time:

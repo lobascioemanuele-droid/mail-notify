@@ -1,4 +1,4 @@
-"""Diagnostic event recorder (`ccmail trace on`): logs the shape of every hook payload to trace.jsonl.
+"""Diagnostic event recorder (`mail-notify trace on`): logs the shape of every hook payload to trace.jsonl.
 
 Purpose: find out empirically which events Claude Code emits for background commands. Strings are
 redacted and truncated; the file stays local. Independent from the notification pipeline.
@@ -48,7 +48,7 @@ def summarize(limit=60):
     """Human-readable view of the last records: what happened and which background-related fields exist."""
     f = trace_file()
     if not f.exists():
-        return ["(nessuna traccia: esegui 'ccmail trace on', riavvia Claude Code e usa un comando in background)"]
+        return ["(nessuna traccia: esegui 'mail-notify trace on', riavvia Claude Code e usa un comando in background)"]
     out = []
     for line in f.read_text(encoding="utf-8").splitlines()[-limit:]:
         try:

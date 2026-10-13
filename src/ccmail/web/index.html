@@ -62,7 +62,7 @@
       <li>Apri un terminale (PowerShell o Prompt dei comandi).</li>
       <li>Esegui il comando qui sotto: si aprirà di nuovo questa pagina, già autenticata.</li>
     </ol>
-    <div class="cmd" data-cmd="ccmail open"></div>
+    <div class="cmd" data-cmd="mail-notify open"></div>
     <p class="muted small">Nessuna password viene chiesta qui: l'accesso vale solo per questo browser e per questo PC.</p>
   </div>
 </div>
@@ -73,7 +73,7 @@
     <svg class="logo logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
     <h1 class="screen-title" tabindex="-1">Il demone ccmail non risponde</h1>
     <p>La pagina è caricata ma il servizio locale non è raggiungibile: forse è stato fermato o il PC si è riavviato.</p>
-    <div class="cmd" data-cmd="ccmail open"></div>
+    <div class="cmd" data-cmd="mail-notify open"></div>
     <p class="muted small" id="down-retry" role="status">Riprovo automaticamente ogni 10 secondi.</p>
     <button type="button" class="btn" id="down-retry-btn"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Riprova ora</button>
   </div>
@@ -383,7 +383,7 @@ Tutti i 42 test passano. Ti va di dare un'occhiata alla PR?</textarea>
           <dl class="kv" id="cred-kv"></dl>
           <div id="cred-note"></div>
           <p class="muted small">La password per le app non passa mai da questa pagina: si imposta solo dal terminale, ed è conservata cifrata da Windows.</p>
-          <div class="cmd" data-cmd="ccmail init"></div>
+          <div class="cmd" data-cmd="mail-notify init"></div>
         </article>
 
         <article class="card" aria-labelledby="h-test">
@@ -417,7 +417,7 @@ Tutti i 42 test passano. Ti va di dare un'occhiata alla PR?</textarea>
           <li>Scrivi un nome, ad esempio <q>ccmail</q>, e premi <em>Crea</em>. Copia le 16 lettere mostrate.</li>
           <li>In un terminale esegui il comando qui sotto e incolla la password quando richiesta (non viene mostrata mentre scrivi).</li>
         </ol>
-        <div class="cmd" data-cmd="ccmail init"></div>
+        <div class="cmd" data-cmd="mail-notify init"></div>
         <p class="muted small">Puoi revocare la password per le app in qualsiasi momento dalla stessa pagina di Google.</p>
       </article>
 

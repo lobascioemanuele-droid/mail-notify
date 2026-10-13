@@ -196,4 +196,4 @@ measurable at that rate. What cannot be measured here: how a given mail app rend
 - The web app is translated by static catalogs (Italian and English); the English texts were written by hand and
   checked in the browser view by view, not by native speakers.
 - Reply handling, discard mails and the HTML mail were exercised against the author's own Gmail account; other
-  providers are untested.
+  providers (and macOS and Linux on real systems) are not yet tested: planned for a later release.

@@ -6,7 +6,7 @@
     // ---- index.html -------------------------------------------------------------------------------------------
     "ccmail · notifiche email di Claude Code": "ccmail · Claude Code e-mail notifications",
     "Vai al contenuto": "Skip to content",
-    "Mi collego al demone ccmail…": "Connecting to the ccmail daemon…",
+    "Mi collego al demone ccmail…": "Connecting to the mail-notify daemon…",
     "Apri il pannello dal terminale": "Open the panel from the terminal",
     "Per sicurezza questa pagina si apre solo con un link monouso generato sul tuo PC. Il link che hai usato è scaduto, oppure la sessione (8 ore) è terminata.":
       "For safety this page opens only with a one-time link generated on your PC. The link you used has expired, or the session (8 hours) has ended.",
@@ -15,7 +15,7 @@
       "Run the command below: this page will open again, already signed in.",
     "Nessuna password viene chiesta qui: l'accesso vale solo per questo browser e per questo PC.":
       "No password is asked for here: access is valid only for this browser and this PC.",
-    "Il demone ccmail non risponde": "The ccmail daemon is not responding",
+    "Il demone ccmail non risponde": "The mail-notify daemon is not responding",
     "La pagina è caricata ma il servizio locale non è raggiungibile: forse è stato fermato o il PC si è riavviato.":
       "The page has loaded but the local service cannot be reached: it may have been stopped or the PC restarted.",
     "Riprovo automaticamente ogni 10 secondi.": "Retrying automatically every 10 seconds.",

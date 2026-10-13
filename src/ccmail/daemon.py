@@ -36,7 +36,7 @@ def import_spool(db):
 
 
 def _ccmail_answers(port: int, token: str) -> bool:
-    """True if a ccmail daemon (one that accepts our token) is listening on the port."""
+    """True if a mail-notify daemon (one that accepts our token) is listening on the port."""
     import http.client
     try:
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
@@ -67,7 +67,7 @@ def run(foreground=False, port=None) -> int:
         srv = Server(("127.0.0.1", want), db, auth.Auth(token), worker, shutdown)
     except OSError:
         if _ccmail_answers(want, token):
-            log.error("port %d: a ccmail daemon is already running", want)
+            log.error("port %d: a mail-notify daemon is already running", want)
             return 1
         log.warning("port %d is taken by another program: picking a free port (clients read it from daemon.json)",
                     want)
@@ -94,7 +94,7 @@ def run(foreground=False, port=None) -> int:
     inbound.is_parked = srv.heartbeat.is_parked          # lets the confirmation be honest about the chat
     inbound.on_enqueue = worker.wake.set                 # confirmation mails leave within seconds
     inbound.start()
-    log.info("ccmail daemon listening on 127.0.0.1:%d", srv.server_address[1])
+    log.info("mail-notify daemon listening on 127.0.0.1:%d", srv.server_address[1])
     try:
         srv.serve_forever()
     finally:

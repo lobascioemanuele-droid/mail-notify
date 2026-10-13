@@ -6,7 +6,7 @@ description: Turn Claude Code e-mail notifications on or off, check them, send a
 You manage Claude Code's e-mail notifications with **ccmail** (a local daemon). The skill argument is `$ARGUMENTS`.
 Answer the user in the language they write in.
 
-Run ccmail as `ccmail <command>`. If `ccmail` is not on the PATH, use `python -m ccmail <command>`
+Run ccmail as `mail-notify <command>` (the same program is also installed as `ccmail`). If neither is on the PATH, use `python -m ccmail <command>`
 (`py -m ccmail` on Windows).
 
 Allowed commands, one at a time:
@@ -19,11 +19,11 @@ Allowed commands, one at a time:
 Procedure:
 1. If the argument is missing or is not one of the five, answer with the list above and run nothing.
 2. Otherwise run `ccmail <argument>` and report the printed outcome in one line.
-3. After `on` or `off`, also run `ccmail status` and confirm the resulting state.
+3. After `on` or `off`, also run `mail-notify status` and confirm the resulting state.
 4. After `on` (or a `status` that says ON) say in one line that the rules below apply from now on in this session.
    After `off` say they no longer apply and, if you scheduled wake-ups with `ScheduleWakeup`, cancel them (`stop: true`).
-5. If `status` reports missing credentials or hooks, do not try to fix it: tell the user to run `ccmail init` and
-   `ccmail install-hooks` themselves in their own terminal. Never ask for, read or type the mail password.
+5. If `status` reports missing credentials or hooks, do not try to fix it: tell the user to run `mail-notify init` and
+   `mail-notify install-hooks` themselves in their own terminal. Never ask for, read or type the mail password.
 
 ## What ccmail already sends (so you know when nothing else is needed)
 ccmail mails by itself at the end of a long turn (over ~2 minutes), when a permission or input is needed, on an API
@@ -33,7 +33,7 @@ schedule wake-ups for ordinary tasks.
 
 ## Per-project switch
 Every project has a switch in the web app (Activity). Before applying the rules below run
-`ccmail status --cwd "<current project folder>"` and read the "Project …" line: if it says the notifications are
+`mail-notify status --cwd "<current project folder>"` and read the "Project …" line: if it says the notifications are
 **OFF for this project**, the long-running-process rules **do not apply** in this chat (no wake-ups scheduled by you,
 no special summary) and ccmail sends no mail for this project. Do not turn it back on: the user decides in the web app.
 

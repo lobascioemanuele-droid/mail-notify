@@ -41,7 +41,7 @@ def send_test(db, settings: dict) -> None:
 def send(settings: dict, subject: str, body: str, timeout: int = 20, full_text: str = "") -> None:
     cred = credstore.load()
     if not cred:
-        raise MailError("credenziali non configurate: esegui 'ccmail init'")
+        raise MailError("credenziali non configurate: esegui 'mail-notify init'")
     user, password, _ = cred
     to = settings.get("recipient") or user
     html = ""

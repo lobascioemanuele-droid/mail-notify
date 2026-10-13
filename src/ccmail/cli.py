@@ -91,8 +91,10 @@ def cmd_init(a):
         if pv["app_password_url"]:
             print(_("Crea la password per le app qui: ", "Create the app password here: ") + pv["app_password_url"])
         if not pv["tested"]:
-            print(_("Nota: questo provider non è stato provato dall'autore; se non funziona usa «Altro provider».",
-                    "Note: this provider has not been tested by the author; if it fails use «Other provider»."))
+            print(_("Nota: questo provider non è ancora stato provato (è previsto in una versione successiva); "
+                    "se non funziona usa «Altro provider».",
+                    "Note: this provider has not been tested yet (planned for a later release); "
+                    "if it fails use «Other provider»."))
     if a.visible:
         pw = input(_("Password per le app (VISIBILE mentre scrivi): ",
                      "App password (VISIBLE while you type): ")).replace(" ", "")
@@ -101,7 +103,7 @@ def cmd_init(a):
                                "App password (nothing is shown while you type): ")).replace(" ", "")
     to = input(_(f"Destinatario [{user}]: ", f"Recipient [{user}]: ")).strip() or user
     device = input(_("Nome di questo dispositivo (facoltativo, utile se usi ccmail su più PC): ",
-                     "Name of this device (optional, useful if you use ccmail on several PCs): ")).strip()
+                     "Name of this device (optional, useful if you use mail-notify on several PCs): ")).strip()
     try:
         patch = config.validate({"smtp_host": host, "smtp_port": int(port), "smtp_security": sec,
                                  "imap_host": imap, "recipient": to, "device_name": device})
@@ -123,14 +125,14 @@ def cmd_init(a):
         else:
             print(_("ATTENZIONE: nessun archivio sicuro del sistema disponibile (Keychain / Secret Service); "
                     f"la password è in un file riservato al tuo utente (permessi 0600, NON cifrato) in "
-                    f"{paths.data_dir()}. Su Linux installa libsecret-tools e riesegui ccmail init.",
+                    f"{paths.data_dir()}. Su Linux installa libsecret-tools e riesegui mail-notify init.",
                     "WARNING: no secure system store available (Keychain / Secret Service); the password is in a "
                     f"file readable only by your user (mode 0600, NOT encrypted) in {paths.data_dir()}. "
-                    "On Linux install libsecret-tools and run ccmail init again."))
-    print(_("Nessuna email inviata. Prossimi passi: ccmail install-hooks, ccmail install-skill, ccmail on "
-            "(e, se vuoi, ccmail test).",
-            "No e-mail sent. Next steps: ccmail install-hooks, ccmail install-skill, ccmail on "
-            "(and, if you want, ccmail test)."))
+                    "On Linux install libsecret-tools and run mail-notify init again."))
+    print(_("Nessuna email inviata. Prossimi passi: mail-notify install-hooks, mail-notify install-skill, mail-notify on "
+            "(e, se vuoi, mail-notify test).",
+            "No e-mail sent. Next steps: mail-notify install-hooks, mail-notify install-skill, mail-notify on "
+            "(and, if you want, mail-notify test)."))
     return 0
 
 
@@ -168,14 +170,14 @@ def cmd_status(a):
     if cred:
         print(("Credentials: " if en else "Credenziali: ") + f"{cred[0]} ({cred[1]})")
     else:
-        print("Credentials: NOT configured (ccmail init)" if en else "Credenziali: NON configurate (ccmail init)")
+        print("Credentials: NOT configured (mail-notify init)" if en else "Credenziali: NON configurate (mail-notify init)")
     print("Hooks installed:" if en else "Hook installati:",
-          ("yes" if en else "sì") if installer.is_installed() else "no (ccmail install-hooks)")
+          ("yes" if en else "sì") if installer.is_installed() else "no (mail-notify install-hooks)")
     sk = skillinstall.state()
     if not sk["installed"]:
-        print("Skill: not installed (ccmail install-skill)" if en else "Skill: non installata (ccmail install-skill)")
+        print("Skill: not installed (mail-notify install-skill)" if en else "Skill: non installata (mail-notify install-skill)")
     elif not sk["current"]:
-        print("Skill: outdated (ccmail install-skill)" if en else "Skill: non aggiornata (ccmail install-skill)")
+        print("Skill: outdated (mail-notify install-skill)" if en else "Skill: non aggiornata (mail-notify install-skill)")
     else:
         print("Skill: " + ("installed" if en else "installata"))
     print("Queue:" if en else "Coda:", db.outbox_counts() or ("empty" if en else "vuota"))
@@ -332,34 +334,34 @@ def _doctor_checks(network: bool):
         cred = credstore.describe()
     except Exception as e:
         cred = None
-        add("bad", L("Credenziali illeggibili", "Credentials unreadable"), type(e).__name__, "ccmail init")
+        add("bad", L("Credenziali illeggibili", "Credentials unreadable"), type(e).__name__, "mail-notify init")
     else:
         if not cred:
-            add("bad", L("Credenziali non configurate", "Credentials not configured"), "", "ccmail init")
+            add("bad", L("Credenziali non configurate", "Credentials not configured"), "", "mail-notify init")
         elif credstore.is_secure(cred[1]):
             add("ok", L("Credenziali", "Credentials"), f"{cred[0]} ({cred[1]})")
         else:
             add("warn", L("Credenziali in un file di riserva", "Credentials in a fallback file"),
                 f"{cred[0]} ({cred[1]})",
-                L("installa l'archivio sicuro del sistema e riesegui ccmail init",
-                  "install the system secure store and run ccmail init again"))
+                L("installa l'archivio sicuro del sistema e riesegui mail-notify init",
+                  "install the system secure store and run mail-notify init again"))
     if installer.is_installed():
         add("ok", L("Hook installati", "Hooks installed"), str(installer.default_settings_path()))
         exes = installer.hook_interpreters()
         missing = [e for e in exes if not os.path.exists(e)]
         if missing:
             add("bad", L("Hook che puntano a un Python inesistente", "Hooks pointing to a missing Python"),
-                ", ".join(missing), "ccmail install-hooks")
+                ", ".join(missing), "mail-notify install-hooks")
         elif exes and sys.executable not in exes:
             add("warn", L("Gli hook usano un altro Python", "Hooks use a different Python"), ", ".join(exes),
-                L("se hai reinstallato ccmail: ccmail install-hooks", "if you reinstalled ccmail: ccmail install-hooks"))
+                L("se hai reinstallato ccmail: mail-notify install-hooks", "if you reinstalled ccmail: mail-notify install-hooks"))
     else:
-        add("bad", L("Hook non installati", "Hooks not installed"), "", "ccmail install-hooks")
+        add("bad", L("Hook non installati", "Hooks not installed"), "", "mail-notify install-hooks")
     sk = skillinstall.state()
     if not sk["installed"]:
-        add("warn", L("Skill non installata", "Skill not installed"), "", "ccmail install-skill")
+        add("warn", L("Skill non installata", "Skill not installed"), "", "mail-notify install-skill")
     elif not sk["current"]:
-        add("warn", L("Skill non aggiornata", "Skill outdated"), sk["path"], "ccmail install-skill")
+        add("warn", L("Skill non aggiornata", "Skill outdated"), sk["path"], "mail-notify install-skill")
     else:
         add("ok", "Skill", sk["path"])
     try:
@@ -368,10 +370,10 @@ def _doctor_checks(network: bool):
         enabled = False
     add("ok" if enabled else "warn", L("Avvio automatico", "Autostart"),
         L("attivo", "enabled") if enabled else L("non attivo", "not enabled"),
-        "" if enabled else "ccmail install-hooks --autostart")
+        "" if enabled else "mail-notify install-hooks --autostart")
     st = _api("GET", "/v1/status")
     add("ok" if st else "warn", L("Demone", "Daemon"), L("in esecuzione", "running") if st else L("fermo", "stopped"),
-        "" if st else "ccmail on")
+        "" if st else "mail-notify on")
     if network:
         for label, host, port in (("SMTP", s["smtp_host"], s["smtp_port"]), ("IMAP", s["imap_host"], 993)):
             try:
@@ -430,7 +432,7 @@ def cmd_trace(a):
         installer.trace_install()
         print(f"Tracciamento diagnostico attivo (file: {tracer.trace_file()}).")
         print("Riavvia Claude Code (gli hook si leggono all'avvio), poi esegui un comando in background e "
-              "fai finire il processo. Infine: ccmail trace show; a prova finita: ccmail trace off.")
+              "fai finire il processo. Infine: mail-notify trace show; a prova finita: mail-notify trace off.")
     elif a.action == "off":
         print(f"Voci di tracciamento rimosse: {installer.trace_uninstall()}")
         tf = tracer.trace_file()

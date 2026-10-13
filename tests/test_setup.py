@@ -20,8 +20,12 @@ class SetupTests(TmpHome):
         os.environ["CLAUDE_CONFIG_DIR"] = str(self.claude)
         self._p = mock.patch.object(launcher, "target", lambda *a, **k: self.bin)
         self._p.start()
+        # the output depends on whether `mail-notify` is on this machine's PATH: make it deterministic
+        self._w = mock.patch.object(cli.shutil, "which", side_effect=lambda n: "/usr/bin/mail-notify")
+        self._w.start()
 
     def tearDown(self):
+        self._w.stop()
         self._p.stop()
         if self._old_cfg is None:
             os.environ.pop("CLAUDE_CONFIG_DIR", None)

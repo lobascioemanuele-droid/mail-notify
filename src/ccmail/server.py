@@ -269,7 +269,7 @@ class Handler(BaseHTTPRequestHandler):
             for k in ("toggled_at", "snooze_until", "enabled", "port"):
                 s.pop(k, None)
                 d.pop(k, None)
-            return self._json(200, {"values": s, "defaults": d,
+            return self._json(200, {"values": s, "defaults": d, "language_resolved": i18n.resolve(s),
                                     "options": {"notification_types": config.NOTIFICATION_TYPES,
                                                 "events": config.EVENT_KEYS}})
         if (method, path) == ("GET", "/v1/overview"):

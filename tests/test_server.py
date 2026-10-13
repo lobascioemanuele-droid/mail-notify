@@ -138,7 +138,7 @@ class ServerTests(TmpHome):
 
     def test_settings_shape(self):
         d = self.get_json("/v1/settings")
-        self.assertEqual(set(d), {"values", "defaults", "options"})
+        self.assertEqual(set(d), {"values", "defaults", "options", "language_resolved"})
         self.assertNotIn("snooze_until", d["values"])
         self.assertIn("permission_prompt", d["options"]["notification_types"])
 

@@ -24,7 +24,7 @@ class HtmlMailTests(TmpHome):
     def test_buttons_are_mailto_with_command_and_ref(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
         links = re.findall(r'href="(mailto:[^"]+)"', h)
-        self.assertEqual(len(links), 4)  # OFF, ON, PAUSA, Scrivi a Claude
+        self.assertEqual(len(links), 7)  # OFF, ON, PAUSA 60, three more pauses, write to Claude
         cmds = []
         for l in links:
             u = urlparse(l.replace("&amp;", "&"))
@@ -37,9 +37,10 @@ class HtmlMailTests(TmpHome):
 
     def test_button_text_is_a_command_the_inbound_parser_accepts(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
-        for l in re.findall(r'href="(mailto:[^"]+)"', h)[:3]:
+        for l in re.findall(r'href="(mailto:[^"]+)"', h)[:6]:
             body = parse_qs(urlparse(l.replace("&amp;", "&")).query)["body"][0]
-            self.assertIsNotNone(inbound.parse_command(body))
+            if not body.strip().startswith("Rif:"):  # the 'write to Claude' link has no command on purpose
+                self.assertIsNotNone(inbound.parse_command(body))
             self.assertIn(REF, inbound.REF_RE.findall(body))
 
     def test_full_message_in_scroll_box_only_when_longer(self):

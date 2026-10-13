@@ -2,32 +2,49 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:   # dry run from the Actions tab: builds and verifies, never publishes
 permissions:
   contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: |
           python -m pip install --upgrade build twine
           python -m build
           python -m twine check dist/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
-  publish:
+  verify:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: |
+          python -m pip install --upgrade twine
+          ls -l dist/
+          python -m twine check dist/*
+  publish:
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')   # a manual dry run never reaches PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: pypi          # create this environment in the repo settings and require approval
     permissions:
       id-token: write          # PyPI trusted publishing (OIDC): no API token is stored anywhere
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/

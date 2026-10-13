@@ -55,6 +55,12 @@ class SetupTests(TmpHome):
         stop_cmds = [h["command"] for g in settings["hooks"]["Stop"] for h in g["hooks"]]
         self.assertEqual(len(stop_cmds), len(set(stop_cmds)))  # no duplicated hook entries
 
+    def test_no_skill_leaves_the_skill_to_the_plugin(self):
+        code, out = self.run_cli("setup", "--no-skill")
+        self.assertEqual(code, 0)
+        self.assertFalse((self.claude / "skills" / "mail-notify" / "SKILL.md").exists())
+        self.assertTrue((self.claude / "settings.json").is_file())  # hooks are still installed
+
     def test_setup_never_asks_for_or_touches_the_password(self):
         with mock.patch("builtins.input", side_effect=AssertionError("setup must not prompt")), \
                 mock.patch("getpass.getpass", side_effect=AssertionError("setup must not prompt")):

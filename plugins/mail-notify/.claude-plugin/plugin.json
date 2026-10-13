@@ -1,0 +1,12 @@
+{
+  "name": "mail-notify",
+  "version": "1.0.0",
+  "description": "The /mail-notify skill for the mail-notify daemon: e-mail notifications for Claude Code events. Requires the mail-notify program (pipx install mail-notify) with its hooks set up (mail-notify setup).",
+  "author": {
+    "name": "lobascioemanuele-droid"
+  },
+  "homepage": "https://github.com/lobascioemanuele-droid/mail-notify",
+  "repository": "https://github.com/lobascioemanuele-droid/mail-notify",
+  "license": "MIT",
+  "keywords": ["notifications", "email", "hooks", "daemon"]
+}

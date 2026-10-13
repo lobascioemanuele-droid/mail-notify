@@ -306,7 +306,8 @@ def cmd_setup(a):
         autostart = bool(getattr(a, "autostart", False))
 
     cmd_install_hooks(_Opts)
-    cmd_install_skill(_Opts)
+    if not getattr(a, "no_skill", False):  # the skill can come from the Claude Code plugin instead
+        cmd_install_skill(_Opts)
     print()
     if not credstore.describe():
         print(_("Prossimo passo: «mail-notify init» (indirizzo e password per le app), poi «mail-notify on» e "
@@ -521,6 +522,8 @@ def main(argv=None):
     su = sub.add_parser("setup", help="install the hooks, the skill and the short command in one go "
                                        "(run `init` separately: it asks for the password)")
     su.add_argument("--autostart", action="store_true", help="also start the daemon at logon")
+    su.add_argument("--no-skill", action="store_true",
+                    help="do not copy the skill (use it when you install the Claude Code plugin instead)")
     su.set_defaults(fn=cmd_setup)
     i = sub.add_parser("install-hooks", help="install the hooks in Claude Code's settings.json")
     i.add_argument("--autostart", action="store_true", help="start the daemon at logon")

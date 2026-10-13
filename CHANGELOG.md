@@ -2,6 +2,15 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Claude Code plugin marketplace in this repository (`.claude-plugin/marketplace.json`, plugin in
+  `plugins/mail-notify`): `/plugin marketplace add lobascioemanuele-droid/mail-notify`, then
+  `/plugin install mail-notify@mail-notify`. It ships only the skill (same file as the packaged one, checked by a
+  test); `mail-notify setup --no-skill` skips copying the skill for people who use the plugin.
+- GitHub Actions moved to the Node 24 majors (`checkout@v7`, `setup-python@v7`, `upload-artifact@v7`,
+  `download-artifact@v8`, `gitleaks-action@v3`); the release workflow has a `verify` job and a manual dry run.
+
 ## 1.0.0 - 2026-10-13
 
 First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).

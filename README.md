@@ -92,6 +92,29 @@ One command does all of this, and sends nothing:
 It never asks for the password (that is `init`, step 2) and can be run again at any time. The three parts are also
 available one by one: `install-hooks`, `install-skill` and `install-cli`.
 
+### Alternative for step 3: install the skill from Claude Code (plugin)
+
+Instead of copying the skill with `setup`, you can add this repository as a Claude Code plugin marketplace and
+install the skill from inside Claude Code:
+
+```bash
+mail-notify setup --autostart --no-skill
+```
+
+Then, in Claude Code:
+
+```text
+/plugin marketplace add lobascioemanuele-droid/mail-notify
+```
+
+```text
+/plugin install mail-notify@mail-notify
+```
+
+The skill then runs as `/mail-notify:mail-notify status` (Claude Code prefixes a plugin's skills with the plugin
+name). The plugin carries only the skill: the program, the hooks and the daemon still come from steps 1 to 3. Use
+**one** of the two ways, not both.
+
 ### Step 4: restart Claude Code
 
 Close and reopen Claude Code: hooks and skills are read at startup. After that `/mail-notify` appears in the list of

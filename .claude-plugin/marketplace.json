@@ -1,0 +1,14 @@
+{
+  "name": "mail-notify",
+  "description": "Skill for mail-notify: e-mail notifications for Claude Code events (the daemon is installed with pipx).",
+  "owner": {
+    "name": "lobascioemanuele-droid"
+  },
+  "plugins": [
+    {
+      "name": "mail-notify",
+      "source": "./plugins/mail-notify",
+      "description": "The /mail-notify skill: turn e-mail notifications on or off, check them, send a test mail or open the settings web app. Requires the mail-notify program (pipx install mail-notify)."
+    }
+  ]
+}

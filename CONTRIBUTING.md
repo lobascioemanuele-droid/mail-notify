@@ -5,7 +5,7 @@ Thanks for helping. ccmail is deliberately small: standard library only, no runt
 ## Setup
 
 ```bash
-git clone https://github.com/lobascioemanuele-droid/ccmail && cd ccmail
+git clone https://github.com/lobascioemanuele-droid/mail-notify && cd mail-notify
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e .
 PYTHONPATH=src:tests python -W ignore -m unittest discover -s tests     # Windows: set PYTHONPATH=src;tests

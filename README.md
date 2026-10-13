@@ -4,7 +4,7 @@
 A small daemon on your own computer mails you when Claude finishes a long task, needs a permission, hits an error or a
 usage limit, or when your background processes finish. You can answer from your phone by replying to the mail.
 
-[![CI](https://github.com/lobascioemanuele-droid/ccmail/actions/workflows/ci.yml/badge.svg)](https://github.com/lobascioemanuele-droid/ccmail/actions/workflows/ci.yml)
+[![CI](https://github.com/lobascioemanuele-droid/mail-notify/actions/workflows/ci.yml/badge.svg)](https://github.com/lobascioemanuele-droid/mail-notify/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -48,7 +48,7 @@ pipx install ccmail
 To install the current version from the repository instead:
 
 ```bash
-pipx install git+https://github.com/lobascioemanuele-droid/ccmail
+pipx install git+https://github.com/lobascioemanuele-droid/mail-notify
 ```
 
 With Microsoft Store Python the `mail-notify` command can be "not found", because its Scripts folder is not on
@@ -144,7 +144,7 @@ pipx upgrade ccmail
 ```
 
 ```bash
-pipx install --force git+https://github.com/lobascioemanuele-droid/ccmail
+pipx install --force git+https://github.com/lobascioemanuele-droid/mail-notify
 ```
 
 Then refresh the hooks and the skill, and restart Claude Code:
@@ -324,7 +324,7 @@ daemon applies the rules, writes to SQLite, and an outbox worker sends mail with
 ## Development
 
 ```bash
-git clone https://github.com/lobascioemanuele-droid/ccmail && cd ccmail
+git clone https://github.com/lobascioemanuele-droid/mail-notify && cd mail-notify
 ```
 
 ```bash

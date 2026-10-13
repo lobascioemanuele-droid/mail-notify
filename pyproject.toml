@@ -31,10 +31,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lobascioemanuele-droid/ccmail"
-Source = "https://github.com/lobascioemanuele-droid/ccmail"
-Issues = "https://github.com/lobascioemanuele-droid/ccmail/issues"
-Changelog = "https://github.com/lobascioemanuele-droid/ccmail/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/lobascioemanuele-droid/mail-notify"
+Source = "https://github.com/lobascioemanuele-droid/mail-notify"
+Issues = "https://github.com/lobascioemanuele-droid/mail-notify/issues"
+Changelog = "https://github.com/lobascioemanuele-droid/mail-notify/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mail-notify = "ccmail.cli:main"

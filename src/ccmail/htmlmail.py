@@ -188,12 +188,12 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
                      f'{_esc(full[:MAX_FULL])}</div>')
         o.append("</div>")
     if ref and to:
-        cards = (_card(mailto(to, subject, "OFF", ref), "&#10005;", T("Spegni", "Turn off"),
+        cards = (_card(mailto(to, subject, "OFF", ref), "&#10005;", "OFF",
                        T("questo progetto", "this one"), "#b91c1c", "#fef2f2")
-                 + _card(mailto(to, subject, "ON", ref), "&#10003;", T("Riaccendi", "Turn on"),
+                 + _card(mailto(to, subject, "ON", ref), "&#10003;", "ON",
                          T("questo progetto", "this one"), "#15803d", "#f0fdf4")
-                 + _card(mailto(to, subject, "PAUSA 60", ref), "&#10074;&#10074;", T("Pausa 1 ora", "Pause 1 hour"),
-                         T("tutti", "all"), "#b45309", "#fffbeb"))
+                 + _card(mailto(to, subject, "PAUSA 60", ref), "&#10074;&#10074;", "SLEEP",
+                         T("1 ora, tutti", "1 hour, all"), "#b45309", "#fffbeb"))
         pauses = "".join(f'<td width="33%" valign="top" style="padding:0">{_chip(mailto(to, subject, f"PAUSA {n}", ref), _esc(lab))}</td>'
                          for n, lab in ((15, "15 min"), (180, T("3 ore", "3 hours")), (480, T("8 ore", "8 hours"))))
         talk = (f'<div style="margin:12px 0 0">{_chip(mailto(to, subject, "", ref), "&#9998; " + _esc(T("Scrivi a Claude in questa chat", "Write to Claude in this chat")))}</div>'

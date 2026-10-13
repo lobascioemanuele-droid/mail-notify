@@ -307,7 +307,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '
                      f'{_esc(T("Messaggio completo", "Full message"))}'
                      f' ({len(full)} {_esc(T("caratteri", "characters"))})</div>'
-                     f'<div style="max-height:260px;overflow-y:auto;overflow-x:hidden;background:{BOX};'
+                     f'<div style="max-height:340px;overflow-y:auto;overflow-x:hidden;background:{BOX};'
                      f'border:1px solid {LINE};border-left:4px solid {accent};border-radius:8px;padding:12px 14px;'
                      f'font-size:13.5px;line-height:1.6;word-wrap:break-word">'
                      f'{md_to_html(full[:MAX_FULL])}</div>')

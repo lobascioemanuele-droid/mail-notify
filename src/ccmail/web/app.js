@@ -85,6 +85,8 @@
       help: "Richiede «Gestione rispondendo all'email». Se rispondi a una email di ccmail con una frase (non OFF/ON/PAUSA), il testo viene consegnato a Claude come un tuo messaggio nella chat che ha inviato quella email, non appena si ferma (o subito, se è fermo). Valgono gli stessi controlli di sicurezza dei comandi; Claude agisce con i soliti permessi. Spento di default perché è più potente dei comandi: chi controlla la tua casella potrebbe dare istruzioni a Claude." },
     inbound_ack: { type: "bool", label: "Conferma immediata", checkLabel: "Rispondimi subito per dire che la risposta è stata accolta",
       help: "Appena una tua risposta viene accettata (comando o messaggio per Claude) ricevi una breve email di conferma con lo stato di Claude e un tempo indicativo, calcolato sulla durata abituale dei turni di quella chat." },
+    html_mail: { type: "bool", label: "Email con pulsanti", checkLabel: "Aggiungi pulsanti di risposta rapida e il messaggio completo in un riquadro scorrevole",
+      help: "Le email restano testo semplice, ma includono anche una versione HTML: pulsanti OFF / ON / PAUSA (e «Scrivi a Claude») che aprono una risposta già compilata (premi solo Invia) e, se il testo è lungo, un riquadro con barra di scorrimento col messaggio intero. Richiede «Gestione rispondendo all'email» per i pulsanti. Il contenuto segue la modalità scelta: in «Solo titolo» e «Minimo» il messaggio completo non viene incluso." },
     summary_chars: { type: "int", min: 100, max: 3000, smax: 1500, step: 50, unit: "caratteri", fmt: "chars",
       label: "Lunghezza massima del riassunto",
       help: "Modalità «Riassunto»: il riassunto automatico (prime frasi, punti principali, eventuale domanda finale) non supera questo limite." },
@@ -110,7 +112,7 @@
   const NOISE_KEYS = ["min_elapsed_s", "cooldown_s", "max_per_hour", "mute_after_toggle_s", "watchdog_minutes"];
   const CONN_KEYS = ["recipient", "smtp_host", "smtp_port", "smtp_security"];
   const BG_KEYS = ["heartbeat_mode", "heartbeat_minutes"];
-  const MAIL_EXTRA_KEYS = ["suggestions_enabled", "inbound_enabled", "inbound_to_claude", "inbound_ack"];
+  const MAIL_EXTRA_KEYS = ["suggestions_enabled", "inbound_enabled", "inbound_to_claude", "inbound_ack", "html_mail"];
   const SETTING_KEYS = [...NOISE_KEYS, ...BG_KEYS, ...MAIL_EXTRA_KEYS, "account_name", "device_name", "language", "summary_chars", "max_body_chars", "content_mode", "events_enabled", "notify_types", ...CONN_KEYS];
 
   // ------------------------------------------------------------------ formatting

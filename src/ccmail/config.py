@@ -33,6 +33,7 @@ DEFAULTS = {
                        "SessionEnd": False},
     "suggestions_enabled": True,     # "comandi suggeriti" section in the mail body
     "inbound_enabled": False,        # reply-by-email control channel (IMAP); off until the user turns it on
+    "html_mail": False,              # add an HTML alternative: quick-reply buttons and a scrollable full message
     "inbound_ack": True,             # instant confirmation mail for an accepted reply
     "inbound_to_claude": False,      # ALSO deliver free-text replies into the Claude chat (needs inbound_enabled)
     "imap_host": "imap.gmail.com",
@@ -126,6 +127,7 @@ VALIDATORS = {
     "suggestions_enabled": _bool,
     "inbound_enabled": _bool,
     "inbound_to_claude": _bool,
+    "html_mail": _bool,
     "inbound_ack": _bool,
     "imap_host": _host,
     "inbound_poll_s": _int(30, 600),

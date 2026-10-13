@@ -55,7 +55,7 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
         eid = db.add_event(now, sid, event, ntype, summary if summary is not None else _summary(event, payload),
                            decision)
         if mail:
-            db.enqueue(eid, mail[0], mail[1], now)
+            db.enqueue(eid, mail[0], mail[1], now, full_text=mail[2] if len(mail) > 2 else None)
         return decision
 
     if event == "UserPromptSubmit":
@@ -120,7 +120,8 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
                                  reply_turn=reply_turn)
     db.set_session(sid, last_sent_at=now)
     tag = "limit" if limit_hit else ("reply" if reply_turn and kind is None else kind)
-    return done("queued" if tag is None else "queued:" + tag, (subject, body))
+    full = render.full_text(event, payload, s, limit_hit) if s.get("html_mail") else None
+    return done("queued" if tag is None else "queued:" + tag, (subject, body, full))
 
 
 def simulate(db, event, elapsed_s=None, message="", ntype="", session_id=None, now=None,

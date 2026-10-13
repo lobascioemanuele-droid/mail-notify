@@ -37,7 +37,7 @@ class Worker(threading.Thread):
         settings = self.db.get_settings()
         for row in self.db.due_outbox(now):
             try:
-                mailer.send(settings, row["subject"], row["body"])
+                mailer.send(settings, row["subject"], row["body"], full_text=row.get("full_text") or "")
             except mailer.MailError as e:
                 n = row["attempts"] + 1
                 if n >= MAX_ATTEMPTS:

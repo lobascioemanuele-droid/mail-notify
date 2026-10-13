@@ -131,6 +131,20 @@ def _cut_whole(text: str, limit: int, settings: dict = None) -> str:
                                 f"\n[… full message: {len(text)} characters, showing {len(head)}]")
 
 
+def full_text(event: str, payload: dict, settings: dict, limit_hit: bool = False) -> str:
+    """The whole (redacted) message, for the scrollable box of the HTML alternative. Empty in `minimal` and
+    `title` modes: the content setting still decides what leaves the machine."""
+    if settings.get("content_mode") not in ("summary", "full"):
+        return ""
+    if event == "Notification":
+        raw = payload.get("message")
+    elif event in ("Stop", "StopFailure"):
+        raw = payload.get("last_assistant_message") or (payload.get("message") if limit_hit else "")
+    else:
+        return ""
+    return redact(str(raw or "")).strip()[:6000]
+
+
 def build(event: str, payload: dict, settings: dict, project: str, elapsed, kind=None, n_bg=0,
           chat_title: str = "", limit_hit: bool = False, ref: str = None, inbound: bool = False,
           to_claude: bool = False, reply_turn: bool = False):

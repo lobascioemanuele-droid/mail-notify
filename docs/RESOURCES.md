@@ -166,6 +166,11 @@ powershell -Command "$p=Get-Process -Id <pid>; $p.WorkingSet64/1MB; $p.CPU"
 python -c "from ccmail import heartbeat, skillinstall; print(len(heartbeat.wake_message(30,['t1'],'en')), len(skillinstall.packaged_path().read_text(encoding='utf-8')))"
 ```
 
+## HTML mail (`html_mail`, off by default)
+Rendered at send time from the queued text: no extra tokens, one string build per mail. The mail grows by the HTML
+part (≈ 3–4 KB for the layout + at most 6,000 characters of full message); the outbox stores the full message in one
+extra column. Network per mail rises from ≈ 6–10 KB to ≈ 10–20 KB.
+
 ## Honest limits
 - Token figures are estimates from character counts; real tokenisation differs by a few tens of percent.
 - The wake-up cost depends on the conversation size and cache state, which ccmail cannot control; the formula in

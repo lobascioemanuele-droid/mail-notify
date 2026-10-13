@@ -11,12 +11,14 @@ class MailError(Exception):
     pass
 
 
-def build_message(sender: str, to: str, subject: str, body: str) -> EmailMessage:
+def build_message(sender: str, to: str, subject: str, body: str, html: str = "") -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = sender
     msg["To"] = to
     msg["Subject"] = render.clean_line(subject, 150)
     msg.set_content(body)
+    if html:  # the plain-text part above is unchanged; mail clients that show HTML prefer this alternative
+        msg.add_alternative(html, subtype="html")
     return msg
 
 
@@ -36,13 +38,17 @@ def send_test(db, settings: dict) -> None:
          "VALUES(?,?,?,?,?,?,?)", (now, subject, body, "sent", 1, time.time(), "test"))
 
 
-def send(settings: dict, subject: str, body: str, timeout: int = 20) -> None:
+def send(settings: dict, subject: str, body: str, timeout: int = 20, full_text: str = "") -> None:
     cred = credstore.load()
     if not cred:
         raise MailError("credenziali non configurate: esegui 'ccmail init'")
     user, password, _ = cred
     to = settings.get("recipient") or user
-    msg = build_message(user, to, subject, body)
+    html = ""
+    if settings.get("html_mail"):
+        from . import htmlmail
+        html = htmlmail.render(subject, body, settings, to, full_text)
+    msg = build_message(user, to, subject, body, html)
     host, port = settings["smtp_host"], settings["smtp_port"]
     ctx = ssl.create_default_context()
     try:

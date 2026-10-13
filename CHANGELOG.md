@@ -2,6 +2,15 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+- `html_mail` setting (off by default): mails carry an HTML alternative next to the unchanged plain text, with
+  quick-reply buttons (OFF / ON / PAUSE 60, and "Write to Claude") that are pre-filled `mailto:` replies, and the
+  whole message in a box with its own scroll bar. The box follows `content_mode` (nothing extra in `title`/`minimal`).
+  One-click actions without pressing Send are not possible with a loopback-only daemon (Gmail actions need
+  registration with Google and a public HTTPS endpoint).
+
 ## 0.6.0
 
 ### Added

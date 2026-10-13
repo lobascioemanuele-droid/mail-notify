@@ -82,6 +82,8 @@ class DB:
         ocols = {r["name"] for r in self._c.execute("PRAGMA table_info(outbox)").fetchall()}
         if "kind" not in ocols:  # v4 -> v5: 'test' rows are recorded but never count against the hourly cap
             self._c.execute("ALTER TABLE outbox ADD COLUMN kind TEXT")
+        if "full_text" not in ocols:  # HTML alternative: the whole message for the scrollable box
+            self._c.execute("ALTER TABLE outbox ADD COLUMN full_text TEXT")
         self._c.execute("INSERT INTO meta VALUES('schema_version', ?) "
                         "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (str(SCHEMA_VERSION),))
 
@@ -203,9 +205,9 @@ class DB:
                      "VALUES(?,?,?,?,?,?)", (now, sid, event, ntype, summary, decision))
         return cur.lastrowid
 
-    def enqueue(self, event_id, subject, body, now) -> int:
-        cur = self.x("INSERT INTO outbox(event_id, created_at, subject, body, next_try_at) VALUES(?,?,?,?,?)",
-                     (event_id, now, subject, body, now))
+    def enqueue(self, event_id, subject, body, now, full_text=None) -> int:
+        cur = self.x("INSERT INTO outbox(event_id, created_at, subject, body, next_try_at, full_text) "
+                     "VALUES(?,?,?,?,?,?)", (event_id, now, subject, body, now, full_text))
         return cur.lastrowid
 
     def due_outbox(self, now):

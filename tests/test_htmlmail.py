@@ -1,0 +1,91 @@
+"""HTML alternative: reply buttons, scrollable full message, plain part untouched."""
+import email
+import re
+import unittest
+from urllib.parse import parse_qs, unquote, urlparse
+
+from ccmail import htmlmail, inbound, mailer, policy, render
+from helpers import TmpHome
+
+REF = "ccm-0123456789ab"
+LONG = "Ho analizzato i dati. " + "Riga di dettaglio numero {i}. " * 1 + "Fine."
+FULL = " ".join(f"Frase {i} del risultato." for i in range(120))
+
+
+class HtmlMailTests(TmpHome):
+    def setUp(self):
+        super().setUp()
+        self.s = self.db.get_settings()
+        self.s.update(language="it", inbound_enabled=True, inbound_to_claude=True, content_mode="summary")
+        self.subject, self.body = render.build(
+            "Stop", {"hook_event_name": "Stop", "session_id": "abcdef1234", "last_assistant_message": FULL},
+            self.s, "proj", 400, chat_title="Chat prova", ref=REF, inbound=True, to_claude=True)
+
+    def test_buttons_are_mailto_with_command_and_ref(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        links = re.findall(r'href="(mailto:[^"]+)"', h)
+        self.assertEqual(len(links), 4)  # OFF, ON, PAUSA, Scrivi a Claude
+        cmds = []
+        for l in links:
+            u = urlparse(l.replace("&amp;", "&"))
+            self.assertEqual(unquote(u.path), "me@example.com")
+            q = parse_qs(u.query)
+            self.assertTrue(q["subject"][0].startswith("Re: [Claude Code]"))
+            self.assertIn("Rif: " + REF, q["body"][0])
+            cmds.append(q["body"][0].split("\n")[0])
+        self.assertEqual(cmds[:3], ["OFF", "ON", "PAUSA 60"])
+
+    def test_button_text_is_a_command_the_inbound_parser_accepts(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        for l in re.findall(r'href="(mailto:[^"]+)"', h)[:3]:
+            body = parse_qs(urlparse(l.replace("&amp;", "&")).query)["body"][0]
+            self.assertIsNotNone(inbound.parse_command(body))
+            self.assertIn(REF, inbound.REF_RE.findall(body))
+
+    def test_full_message_in_scroll_box_only_when_longer(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        self.assertIn("overflow-y:auto", h)
+        self.assertIn("Frase 119 del risultato.", h)
+        short = htmlmail.render(self.subject, self.body, self.s, "me@example.com", "")
+        self.assertNotIn("overflow-y:auto", short)
+
+    def test_instructions_replaced_and_text_escaped(self):
+        h = htmlmail.render("<b>x</b>", self.body + "\n<script>alert(1)</script>", self.s, "me@example.com", "<i>&</i>" * 80)
+        self.assertNotIn("<script>", h)
+        self.assertNotIn("<b>x</b>", h)
+        self.assertNotIn("Rispondi a questa email scrivendo", h)
+
+    def test_no_buttons_without_reference(self):
+        subject, body = render.build("Stop", {"last_assistant_message": "ok"}, self.s, "p", 400)
+        h = htmlmail.render(subject, body, self.s, "me@example.com")
+        self.assertNotIn("mailto:", h)
+
+    def test_message_keeps_plain_part_and_adds_html(self):
+        m = mailer.build_message("a@x", "a@x", self.subject, self.body, "<p>x</p>")
+        self.assertEqual(m.get_body(("plain",)).get_content(), self.body)
+        self.assertIn("<p>x</p>", m.get_body(("html",)).get_content())
+        self.assertFalse(mailer.build_message("a@x", "a@x", self.subject, self.body).is_multipart())
+
+    def test_full_text_follows_content_mode_and_redacts(self):
+        secret = "ghp_" + "a" * 36
+        p = {"last_assistant_message": "Fatto " + secret}
+        self.assertIn("Fatto", render.full_text("Stop", p, {"content_mode": "full"}))
+        self.assertNotIn(secret, render.full_text("Stop", p, {"content_mode": "summary"}))
+        self.assertEqual(render.full_text("Stop", p, {"content_mode": "title"}), "")
+        self.assertEqual(render.full_text("Stop", p, {"content_mode": "minimal"}), "")
+
+    def test_policy_stores_full_text_only_when_enabled(self):
+        self.enable(1_000.0)
+        for flag in (False, True):
+            self.db.set_settings({"html_mail": flag, "min_elapsed_s": 0, "cooldown_s": 0, "max_per_hour": 1000})
+            policy.handle_event(self.db, {"hook_event_name": "UserPromptSubmit", "session_id": "h", "cwd": "C:/x/p"},
+                                now=2_000.0 + flag * 1000)
+            policy.handle_event(self.db, {"hook_event_name": "Stop", "session_id": "h", "cwd": "C:/x/p",
+                                          "last_assistant_message": FULL}, now=2_500.0 + flag * 1000)
+        rows = self.db.q("SELECT full_text FROM outbox ORDER BY id")
+        self.assertFalse(rows[0]["full_text"])
+        self.assertIn("Frase 119", rows[1]["full_text"])
+
+
+if __name__ == "__main__":
+    unittest.main()

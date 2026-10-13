@@ -22,7 +22,7 @@ DEFAULTS = {
     "account_name": "",              # shown in every mail as "Account:"; empty = Windows user name
     "content_mode": "summary",       # summary | full | title | minimal
     "max_body_chars": 1500,          # full mode: truncation of the whole message
-    "summary_chars": 800,            # summary mode: cap of the extractive summary (at most 10 short lines)
+    "summary_chars": 300,            # summary mode: cap of the extractive summary (characters)
     # --- fewer emails: every gate below suppresses mail ---
     "min_elapsed_s": 120,            # Stop mails only for turns at least this long
     "cooldown_s": 60,                # min seconds between mails for the same session

@@ -16,8 +16,8 @@ Design notes: hooks, daemon, background processes, chats and projects. For insta
    `additionalContext` for the next model call.
 4. **The answer.** Delivery marks the session `reply_pending`. At the next `Stop` that turn is mailed even when it
    is shorter than `min_elapsed_s`, ignores the cooldown and background-task silence, and carries the subject
-   "risposta alla tua email". The flag is cleared at once; the per-project switch, snooze, disabled state and the
-   hourly cap still apply.
+   "risposta alla tua email" (English mode: "answer to your e-mail"). The flag is cleared at once; the per-project
+   switch, snooze, disabled state and the hourly cap still apply.
 
 See [RESOURCES.md](RESOURCES.md) for what each of these paths costs.
 
@@ -35,6 +35,45 @@ When a verified reply cannot be acted on (`rejected:no_session`, unknown/expired
 the inbound thread queues a "reply discarded" mail through the same outbox. The mail starts with the usual
 `Progetto:`/`Project:` lines, which the inbound parser recognises as ccmail's own text, so it can never trigger
 another discard mail. Capped at 5 an hour.
+
+## Summary and the full-message box
+
+The mail body in `summary` mode is built locally by `summarize.py`, with no model and no network. `summary_chars`
+(default 300; the web app accepts 100–3000) is the character budget of the summary.
+
+- Fenced code is removed. Tables contribute only their first column; horizontal rules are dropped.
+- The **lead** is the first paragraph of the answer: up to two sentences, at most 220 characters (`LEAD_CAP`).
+- Each heading becomes one line, `Heading: first sentence`, taken from what that section opens with (its first
+  bullet when it opens with a list). A table under a heading adds up to three values of its first column. Bullets and
+  paragraphs outside any heading become one line each.
+- A **closing question** (the last block, when it ends with `?`) is kept as the last line.
+- At most `MAX_LINES` = 10 lines in total, the lead, the question and the `(+N altri punti)` counter included. When
+  the sections do not fit, they are sampled evenly across the whole answer, so later sections are represented too.
+- Caps shrink with the budget: a line is at most `min(130, summary_chars / 3)` characters (never below 60), the lead
+  `min(220, summary_chars / 3)` (never below 80), a bullet `ITEM_CAP` = 100 at most. A line over its cap is shortened
+  at a word boundary and marked `[…]`. If the total is still over `summary_chars`, entries are dropped from the
+  middle and the first and last ones are kept; at 300 characters that is typically the lead, one or two section lines
+  and the question.
+
+With `html_mail` on, the **box** holds the answer as well, so nothing is lost. In `summary` mode it is the whole answer
+(redacted, cut at 6,000 characters), without the leading sentences that the OUTCOME section already shows
+(`strip_leading`). In `full` mode the OUTCOME section shows the answer cut at `max_body_chars` (default 1,500, at a
+sentence or paragraph boundary) and the box continues from there. The box is 340 px high at most and scrolls
+(`max-height: 340px; overflow-y: auto`). Its text, and the outcome in `full` mode, is Markdown rendered as HTML:
+fenced code as a code block, inline code, bold, italic, headings and bullets. Everything is HTML-escaped first, and the
+only tags are the ones the renderer writes (`htmlmail.md_to_html`). The plain-text part is never changed.
+
+## Command order, language and the short command
+
+- Several reply commands that arrive in one pass are applied **oldest first**: ON and then OFF ends OFF.
+- **Language.** An explicit `it` or `en` setting is used as it is. `auto` is resolved in this order: the environment
+  variable `CCMAIL_LANG` (`it` or `en`; for tests and troubleshooting), Claude Code's `language` setting in its
+  `settings.json` (only when it names Italian or English), the variables `LC_ALL`, `LC_MESSAGES` and `LANG`, the
+  locale and, on Windows, the user's interface language. Anything that is not Italian resolves to English.
+- **The `mail-notify` command.** `install-cli` writes a small launcher that runs `<this Python> -m ccmail`: a `.cmd`
+  file in `%LOCALAPPDATA%\Microsoft\WindowsApps` on Windows, a shell script in `~/.local/bin` elsewhere. The file carries
+  a marker line, so `uninstall-cli` removes only a launcher ccmail wrote, and `install-cli` refuses to overwrite a file
+  that is not its own. `install-hooks` and `install-skill` also create it; if that fails they say so and go on.
 
 ## Hooks and daemon
 

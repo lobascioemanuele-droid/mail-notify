@@ -162,7 +162,7 @@ def build(event: str, payload: dict, settings: dict, project: str, elapsed, kind
 
     def shape(text):
         if mode == "summary":
-            return summarize(text, settings.get("summary_chars", 600))
+            return summarize(text, settings.get("summary_chars", 300))
         return _cut_whole(text, limit, settings)
 
     ntype = payload.get("notification_type") or ""

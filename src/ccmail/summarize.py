@@ -97,13 +97,18 @@ def _sample(items: list, k: int) -> list:
     return [items[i] for i in idx]
 
 
-def summarize(text: str, limit: int = 600) -> str:
+def summarize(text: str, limit: int = 300) -> str:
+    # per-line caps shrink with the budget, so that a small limit (300 characters by default) still has room for
+    # the lead, a couple of section lines and the question
+    line_cap = max(60, min(LINE_CAP, limit // 3))
+    item_cap = min(ITEM_CAP, line_cap)
+    lead_cap = max(80, min(LEAD_CAP, limit // 3))
     text = _FENCE.sub("", text or "").strip()
     if not text:
         return ""
     blocks = _blocks(text)
     if not blocks:
-        return _hard_cut(_clean(text), min(limit, LEAD_CAP))
+        return _hard_cut(_clean(text), min(limit, lead_cap))
 
     # sections: a heading opens one; its content keeps document order (prose and bullets interleaved)
     sections = [{"head": None, "seq": []}]
@@ -121,13 +126,13 @@ def summarize(text: str, limit: int = 600) -> str:
             lead = " ".join(sents[:LEAD_SENTENCES])
             if len(lead) > limit:
                 lead = sents[0]
-            lead = _hard_cut(lead, min(LEAD_CAP, limit))
+            lead = _hard_cut(lead, min(lead_cap, limit))
             break
 
     question = ""
     kind, val = blocks[-1]
     if kind in ("para", "item") and isinstance(val, str) and val.endswith("?"):
-        question = _hard_cut(val, LEAD_CAP)
+        question = _hard_cut(val, lead_cap)
         for sec in sections:  # do not repeat it as a body line
             sec["seq"] = [x for x in sec["seq"] if x[1] != val]
 
@@ -141,15 +146,15 @@ def summarize(text: str, limit: int = 600) -> str:
             elif seq and seq[0][0] == "table":
                 body = ", ".join(_clean(c) for c in seq[0][1][1:4] if _clean(c))
             elif seq and seq[0][0] == "item":
-                body = _hard_cut(_first_sentence(seq[0][1]), ITEM_CAP)
+                body = _hard_cut(_first_sentence(seq[0][1]), item_cap)
             if body:
-                entries.append(_hard_cut(f"{sec['head']}: {body.rstrip(':')}", LINE_CAP))
+                entries.append(_hard_cut(f"{sec['head']}: {body.rstrip(':')}", line_cap))
         else:
             for k, v in seq:
                 if k == "table":
                     continue
-                entries.append(_hard_cut(_first_sentence(v), LINE_CAP) if k == "para"
-                               else "• " + _hard_cut(_first_sentence(v), LINE_CAP))
+                entries.append(_hard_cut(_first_sentence(v), line_cap) if k == "para"
+                               else "• " + _hard_cut(_first_sentence(v), line_cap))
 
     lead_lines = [lead] if lead else []
     tail_lines = [question] if question else []
@@ -168,7 +173,7 @@ def summarize(text: str, limit: int = 600) -> str:
         chosen.pop(len(chosen) // 2)
         res = assemble(chosen, len(entries) - len(chosen))
     if not res:
-        res = _hard_cut(_clean(text), min(limit, LEAD_CAP))
+        res = _hard_cut(_clean(text), min(limit, lead_cap))
     if len(res) > limit:  # a cap smaller than one sentence: shorten at a word boundary, say so
         res = _hard_cut(res, max(limit - 4, 10))
     return res

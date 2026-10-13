@@ -284,7 +284,8 @@ def cmd_install_hooks(a):
 
 
 def cmd_uninstall_hooks(a):
-    print(_(f"Voci rimosse: {installer.uninstall()}", f"Entries removed: {installer.uninstall()}"))
+    removed = installer.uninstall()  # once: a second call would report 0 in the second language
+    print(_(f"Voci rimosse: {removed}", f"Entries removed: {removed}"))
     if a.autostart:
         installer.autostart(False)
     return 0

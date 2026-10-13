@@ -7,11 +7,11 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 ### Changed (summary)
 - The summary in `summary` mode now covers the whole answer in at most 10 short lines: a lead, one line per
   section ("Heading: what it opens with") sampled evenly across the message, and the closing question. The default
-  `summary_chars` is 1200. The scrollable box of the HTML mail holds the complete answer (in `full` mode, the part
+  `summary_chars` is 300. The scrollable box of the HTML mail holds the complete answer (in `full` mode, the part
   that is not already shown above it).
 - `install-skill` and `install-hooks` also create the short `mail-notify` command, so there is no third step.
 - Summary lines are short (about 130 characters; one bullet per section; a table is named by its first column),
-  the default `summary_chars` is 800, and the box no longer repeats the sentences the answer starts with.
+  the default `summary_chars` is 300 (the outcome fits in 300 characters), and the box no longer repeats the sentences the answer starts with.
 - The scrollable box formats the Markdown of the answer: fenced code as a code block, inline code, bold, headings and
   bullets, *italic*; bold may wrap inline code, and `full` mode formats the outcome too (everything escaped; the
   plain-text part is unchanged).

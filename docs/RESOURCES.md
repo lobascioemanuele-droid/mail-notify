@@ -3,7 +3,8 @@
 What ccmail costs in tokens, CPU, memory, disk, network and latency, and how those numbers were obtained.
 
 **Method.** Measured on Windows 11, Python 3.13 (Microsoft Store build), ccmail 0.6.0, an isolated daemon for the
-synthetic runs and the author's real daemon for the idle runs. Token figures are *estimates* (no tokenizer was
+synthetic runs and the author's real daemon for the idle runs. The changes listed under *Unreleased* in the CHANGELOG
+came after these runs: where a figure depends on them it says so, and only the sizes marked "re-measured" were redone. Token figures are *estimates* (no tokenizer was
 available: characters ÷ 3.5–4, a range that covers Italian and English prose); network figures for IMAP are
 estimates from protocol sizes, not socket counters. Everything marked **measured** comes from an actual run.
 Reproduce with `tests/test_matrix.py` and the commands in [How to measure](#how-to-measure).
@@ -15,7 +16,7 @@ Reproduce with `tests/test_matrix.py` and the commands in [How to measure](#how-
 | LLM tokens, idle / normal use | **0** (the daemon, hooks and web app never call a model) | by design, see below |
 | LLM tokens, skill description | ≈ 55–65 per session, always | 221 characters, measured size |
 | LLM tokens, `/mail-notify …` | ≈ 1,250–1,450 once per invocation | 4,954 characters, measured size |
-| LLM tokens, one periodic wake-up | ≈ 130–150 of ccmail text + the model's own work (see below) | 519 characters, measured size |
+| LLM tokens, one periodic wake-up | ≈ 120–150 of ccmail text + the model's own work (see below) | 513 characters (it) / 476 (en), re-measured on the current code |
 | LLM tokens, an e-mail reply delivered to the chat | ≈ 65–75 + the reply (≤ ≈ 570) | 251 + ≤ 2,000 characters |
 | Memory (daemon) | **≈ 33–38 MB** resident, ≈ 21 MB private, 6–10 threads | measured |
 | CPU (daemon, idle, reply channel off) | **≈ 0.05 %** of one core | measured: 0.016 s / 30 s |
@@ -45,7 +46,7 @@ Only text that ccmail places in front of the model counts. Sizes were measured o
 |---|---|---|---|---|
 | Skill listing | name + description | 221 characters | 55–65 | every session while the skill is installed |
 | `/mail-notify on\|off\|status…` | `SKILL.md` body | 4,954 characters / 807 words | 1,250–1,450 | once per invocation; stays in that chat's context |
-| Periodic wake-up (`heartbeat_mode = hook`) | reminder starting with `[ccmail]` | 519 chars (it) / 482 (en) | 130–150 | once per period **only while background tasks exist** |
+| Periodic wake-up (`heartbeat_mode = hook`) | reminder starting with `[ccmail]` | 513 chars (it) / 476 (en), re-measured with one task id (0.6.0 gave 519 / 482) | 120–150 | once per period **only while background tasks exist** |
 | E-mail reply delivered to the chat | wrapper + your text | 251 / 231 chars + ≤ 2,000 | 65–75 + ≤ 570 | once per accepted reply (same-text duplicates are collapsed) |
 | Claude Code's own framing of a hook message | a short fixed wrapper | — | ≈ 30–60 (estimate) | with each of the two paths above |
 
@@ -110,7 +111,7 @@ over the turn** and ≈ 2.4 s of CPU in short bursts.
 | `ccmail.log` | ≈ 22 KB measured | rotating, 512 KB × 3 files at most |
 | `spool/` | empty unless the daemon is down | at most 200 small files |
 | Credentials | one Credential Manager / Keychain / Secret Service entry (or a ≈ 0.3 KB fallback file) | — |
-| Mail bodies | 650 characters on average, 1,318 at most | `max_body_chars` / `summary_chars` |
+| Mail bodies | ≈ 1.1–1.5 KB of plain text in the measured samples (outcome ≤ `summary_chars`, default 300) | `max_body_chars` / `summary_chars` |
 
 ## 5. Network
 
@@ -168,7 +169,9 @@ python -c "from ccmail import heartbeat, skillinstall; print(len(heartbeat.wake_
 
 ## HTML mail (`html_mail`, off by default)
 Rendered in the daemon at send time from the queued text. **No model call and no tokens.** Measured on the real
-builders (Python 3.13, Windows; 300 renders each, `mailer.build_message(...).as_bytes()`):
+builders (Python 3.13, Windows; 300 renders each, `mailer.build_message(...).as_bytes()`). **Not re-measured:** these
+sizes predate the Unreleased HTML changes (Markdown formatting in the box, the 340 px box height, the summary layout),
+so expect small differences until they are measured again:
 
 | Mail | Plain only | Plain + HTML | HTML part | Render time |
 |---|---|---|---|---|
@@ -188,7 +191,7 @@ measurable at that rate. What cannot be measured here: how a given mail app rend
   1.3 is the way to size it for your usage.
 - Resident memory was measured on Windows; macOS and Linux were not measured.
 - IMAP traffic is estimated from protocol sizes, not counted on the socket.
-- HTML mail: sizes and render times are measured; how Gmail, Apple Mail or Outlook draw it (and whether the scroll
+- HTML mail: sizes and render times were measured at 0.6.0 (see above); how Gmail, Apple Mail or Outlook draw it (and whether the scroll
   box scrolls) was checked by hand in one Gmail account only.
 - The web app is translated by static catalogs (Italian and English); the English texts were written by hand and
   checked in the browser view by view, not by native speakers.

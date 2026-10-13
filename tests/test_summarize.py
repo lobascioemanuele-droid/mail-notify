@@ -74,6 +74,17 @@ class SummarizeTests(unittest.TestCase):
         for line in summarize(text, 800).splitlines():
             self.assertLessEqual(len(line), 160, line)
 
+    def test_default_budget_of_300_characters_still_covers_the_answer(self):
+        text = "Ho finito la verifica completa del modulo e di tutte le sue parti.\n\n" + "\n".join(
+            f"## Sezione {i}\nIn questa sezione ho controllato il punto {i} con molta attenzione e tutto torna." for i in range(1, 9)
+        ) + "\n\nVuoi che proceda con la pubblicazione?"
+        s = summarize(text, 300)
+        self.assertLessEqual(len(s), 300)
+        lines = s.splitlines()
+        self.assertGreaterEqual(len(lines), 3)  # lead, at least one section, the question
+        self.assertTrue(lines[0].startswith("Ho finito la verifica"))
+        self.assertTrue(lines[-1].endswith("pubblicazione?"))
+
     def test_plain_text_only(self):
         s = summarize("Fatto. Ho sistemato il bug nel parser e aggiunto un test. Altre note lunghe " * 20, 300)
         self.assertLessEqual(len(s), 300)

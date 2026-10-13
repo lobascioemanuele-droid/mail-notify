@@ -86,7 +86,8 @@
     inbound_ack: { type: "bool", label: "Conferma immediata", checkLabel: "Rispondimi subito per dire che la risposta è stata accolta",
       help: "Appena una tua risposta viene accettata (comando o messaggio per Claude) ricevi una breve email di conferma con lo stato di Claude e un tempo indicativo, calcolato sulla durata abituale dei turni di quella chat." },
     html_mail: { type: "bool", label: "Email con pulsanti", checkLabel: "Aggiungi pulsanti di risposta rapida e il messaggio completo in un riquadro scorrevole",
-      help: "Le email restano testo semplice, ma includono anche una versione HTML: pulsanti OFF / ON / PAUSA (e «Scrivi a Claude») che aprono una risposta già compilata (premi solo Invia) e, se il testo è lungo, un riquadro con barra di scorrimento col messaggio intero. Richiede «Gestione rispondendo all'email» per i pulsanti. Il contenuto segue la modalità scelta: in «Solo titolo» e «Minimo» il messaggio completo non viene incluso." },
+      help: "Le email restano testo semplice, ma includono anche una versione HTML: pulsanti OFF / ON / PAUSA (e «Scrivi a Claude») che aprono una risposta già compilata (premi solo Invia) e, se il testo è lungo, un riquadro con barra di scorrimento col messaggio intero. Richiede «Gestione rispondendo all'email» per i pulsanti. Il contenuto segue la modalità scelta: in «Solo titolo» e «Minimo» il messaggio completo non viene incluso.",
+      activeNote: "Il testo semplice resta sempre presente dentro la mail. Se un'app di posta non mostra l'HTML, vedrai il formato semplice, senza pulsanti né riquadro scorrevole." },
     summary_chars: { type: "int", min: 100, max: 3000, smax: 1500, step: 50, unit: "caratteri", fmt: "chars",
       label: "Lunghezza massima del riassunto",
       help: "Modalità «Riassunto»: il riassunto automatico (prime frasi, punti principali, eventuale domanda finale) non supera questo limite." },
@@ -688,10 +689,14 @@
     }
     input.addEventListener("input", () => onFieldInput(k));
     input.addEventListener("change", () => onFieldInput(k));
+    // a note shown only while a switch is on (e.g. what happens in a mail app that does not show HTML)
+    const note = f.activeNote ? h("div", { class: "banner banner-info small", role: "note", hidden: true },
+      icon("help"), h("p", { text: f.activeNote })) : null;
     const wrap = h("div", { class: "field" + (f.type === "email" || f.type === "host" ? " field-text" : ""), dataset: { field: k } },
       h("div", { class: "field-label" }, h("label", { for: id, text: f.label }), out),
-      control, h("p", { class: "help", id: helpId, text: f.help }), err, h("div", { class: "field-foot" }, reset));
-    refs[k] = { wrap, input, range, out, err, reset };
+      control, h("p", { class: "help", id: helpId, text: f.help }),
+      note || null, err, h("div", { class: "field-foot" }, reset));
+    refs[k] = { wrap, input, range, out, err, reset, note };
     return wrap;
   }
   function readField(k) {
@@ -723,6 +728,7 @@
   function updateFieldDecor(k) {
     const r = refs[k], f = FIELDS[k], v = state.draft[k];
     if (!r) return;
+    if (r.note) r.note.hidden = !(f.type === "bool" && v);
     if (f.type === "bool") r.out.textContent = v ? "attivo" : "spento";
     else if (f.type === "int") r.out.textContent = typeof v === "number" && !state.errors[k] && f.fmt !== "plain" ? fmtValue(f, v) : "";
     else if (k === "recipient") {

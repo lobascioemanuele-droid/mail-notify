@@ -42,21 +42,44 @@ ccmail never asks Claude for your password.
 
 ### Step 1: install the package
 
-Install with [pipx](https://pipx.pypa.io), which keeps the program in its own environment. Once mail-notify is on PyPI:
+Pick **one** way. All three put the program in its own environment or in your user folder, nothing system-wide.
+
+**With pipx (recommended).** [pipx](https://pipx.pypa.io) keeps the program isolated:
 
 ```bash
 pipx install mail-notify
 ```
 
-To install the current version from the repository instead:
+If the terminal says `pipx` is not recognised, install pipx first (once), then **close and reopen the terminal**:
 
 ```bash
-pipx install git+https://github.com/lobascioemanuele-droid/mail-notify
+python -m pip install --user pipx
 ```
 
-With Microsoft Store Python the `mail-notify` command can be "not found", because its Scripts folder is not on
-`PATH`. In that case use `python -m ccmail` instead of `mail-notify` in every step below, or run
-`python -m ccmail install-cli` once: it creates a short `mail-notify` command in a folder that is already on `PATH`.
+```bash
+python -m pipx ensurepath
+```
+
+**With uv**, if you already use [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv tool install mail-notify
+```
+
+**With plain pip**, no extra tool needed:
+
+```bash
+python -m pip install --user mail-notify
+```
+
+(On Windows you may have `py` instead of `python`: `py -m pip install --user mail-notify`.)
+
+To install the development version from the repository instead of PyPI, replace `mail-notify` with
+`git+https://github.com/lobascioemanuele-droid/mail-notify` in any of the commands above.
+
+If, afterwards, the terminal says `mail-notify` is not recognised (typical with Microsoft Store Python, whose
+Scripts folder is not on `PATH`), use `python -m ccmail` in place of `mail-notify` in every step below. Step 3
+(`setup`) then creates the short `mail-notify` command in a folder that is already on `PATH`.
 
 ### Step 2: set up the sender account
 

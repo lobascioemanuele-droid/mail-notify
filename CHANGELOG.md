@@ -2,7 +2,7 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 1.0.1 - 2026-10-13
 
 - `setup` checks whether `mail-notify` is available in the terminal being used and, when it is not (for example
   Microsoft Store Python), prints the next steps with `python -m ccmail` already filled in and says the short command

@@ -72,6 +72,22 @@ verification), [Outlook](https://account.live.com/proofs/AppPassword), [iCloud](
 Each mail has a header (project, account, chat, device), the outcome, background processes, **suggested commands**
 tailored to the message (paste one into the chat), and – if reply control is on – instructions to reply.
 
+### HTML mail (optional)
+
+Switch on **«Email con pulsanti»** in the web app and every mail also carries an HTML version next to the unchanged
+plain text: a coloured header by event type, the data in a grid, **quick-reply cards** (OFF / ON / SLEEP, other
+pauses, "write to Claude"), the **suggested commands as tappable boxes**, and the whole message in a box with its own
+scroll bar (without repeating what is already shown above it). The same layout is used for the confirmation, the
+"command executed" and the "reply discarded" mails.
+
+- The cards are pre-filled replies (`mailto:`): you still press Send. One-click actions inside Gmail need
+  registration with Google and a public HTTPS endpoint, which a daemon listening on loopback cannot offer.
+- A mail app that does not show HTML shows the plain text, without cards or scroll box.
+- Nothing extra leaves your machine: the box follows the content mode (`title` and `minimal` add nothing), and text
+  goes through the same secret redaction.
+- A verified reply that cannot be delivered (no chat tied to the mail, unknown or expired reference, delivery to
+  Claude switched off) is answered with a mail whose outcome says "reply discarded" and why (at most 5 an hour).
+
 ### Settings web app
 
 `ccmail open` shows: an overview with health checks; rules (what, how often, how much text); an activity view with
@@ -144,7 +160,8 @@ Details and the threat model: [SECURITY.md](SECURITY.md). Report vulnerabilities
 
 No model calls at all in normal operation; the daemon uses ≈ 35 MB and ≈ 0.05–0.25 % of one core, each hook call
 adds ≈ 0.12 s. Tokens are spent only on the skill text, on periodic wake-ups while background tasks run and on delivered
-replies. Measurements, formulas and limits: [docs/RESOURCES.md](docs/RESOURCES.md).
+replies; the HTML mail costs no tokens (≈ 0.1–0.6 ms of CPU and ≈ 6–9 KB more per mail). Measurements, formulas and
+limits: [docs/RESOURCES.md](docs/RESOURCES.md).
 
 ## How it works
 

@@ -23,7 +23,7 @@ Reproduce with `tests/test_matrix.py` and the commands in [How to measure](#how-
 | CPU per hook call | ≈ 0.11 s (interpreter start-up) | measured |
 | Latency added to Claude Code | ≈ 0.12 s per synchronous hook call | measured: median 117 ms, p90 134 ms |
 | Disk | ≈ 0.2 MB database + ≤ 1.5 MB log; 30 days retention | measured |
-| Network, SMTP | one TLS connection per mail, ≈ 6–10 KB | estimate |
+| Network, SMTP | one TLS connection per mail, ≈ 6–10 KB (≈ 12–20 KB with `html_mail`) | estimate; sizes of the HTML part measured |
 | Network, IMAP (reply channel on) | ≈ 15 MB/day while it runs | estimate |
 | Mail volume | ≤ `max_per_hour` (10) per hour; typical day: tens | measured: 37 mails on a heavy test day |
 
@@ -167,9 +167,20 @@ python -c "from ccmail import heartbeat, skillinstall; print(len(heartbeat.wake_
 ```
 
 ## HTML mail (`html_mail`, off by default)
-Rendered at send time from the queued text: no extra tokens, one string build per mail. The mail grows by the HTML
-part (≈ 3–4 KB for the layout + at most 6,000 characters of full message); the outbox stores the full message in one
-extra column. Network per mail rises from ≈ 6–10 KB to ≈ 10–20 KB.
+Rendered in the daemon at send time from the queued text. **No model call and no tokens.** Measured on the real
+builders (Python 3.13, Windows; 300 renders each, `mailer.build_message(...).as_bytes()`):
+
+| Mail | Plain only | Plain + HTML | HTML part | Render time |
+|---|---|---|---|---|
+| Task finished, short text | 1.4 KB | 10.8 KB | 8.6 KB | 0.12 ms |
+| Task finished, 40 paragraphs (box with the whole text) | 1.5 KB | 11.7 KB | 9.3 KB | 0.58 ms |
+| Command executed | 1.1 KB | 7.3 KB | 5.5 KB | 0.06 ms |
+| Reply discarded | 1.4 KB | 8.1 KB | 6.1 KB | 0.09 ms |
+
+So a mail is ≈ 5–8× larger on the wire (inline styles repeat on every element; Gmail needs them inline). At the
+default cap of 10 mails an hour that is ≤ ≈ 120 KB an hour of SMTP traffic on top of the handshakes. The outbox keeps
+the whole message (≤ 6,000 characters, one extra column) only while `html_mail` is on. CPU is far below anything
+measurable at that rate. What cannot be measured here: how a given mail app renders it.
 
 ## Honest limits
 - Token figures are estimates from character counts; real tokenisation differs by a few tens of percent.
@@ -177,3 +188,7 @@ extra column. Network per mail rises from ≈ 6–10 KB to ≈ 10–20 KB.
   1.3 is the way to size it for your usage.
 - Resident memory was measured on Windows; macOS and Linux were not measured.
 - IMAP traffic is estimated from protocol sizes, not counted on the socket.
+- HTML mail: sizes and render times are measured; how Gmail, Apple Mail or Outlook draw it (and whether the scroll
+  box scrolls) was checked by hand in one Gmail account only.
+- Reply handling, discard mails and the HTML mail were exercised against the author's own Gmail account; other
+  providers are untested.

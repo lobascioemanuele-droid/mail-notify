@@ -21,6 +21,21 @@ Design notes: hooks, daemon, background processes, chats and projects. For insta
 
 See [RESOURCES.md](RESOURCES.md) for what each of these paths costs.
 
+## HTML mail and discarded replies
+
+With `html_mail` on, `mailer.send` renders an HTML alternative (`htmlmail.py`) from the queued plain text and
+attaches it as `multipart/alternative`; the plain part is never altered. The layout is derived from the plain body
+(context lines, then `─`-delimited sections), so both parts always agree. Quick-reply cards are `mailto:` links whose
+body is the command and the reference token; nothing is executed by opening the mail, and a reply goes through
+exactly the checks of the reply channel. The whole message for the scroll box is stored beside the queued mail
+(`outbox.full_text`), redacted and cut at 6,000 characters, only when the setting is on and the content mode is
+`summary` or `full`.
+
+When a verified reply cannot be acted on (`rejected:no_session`, unknown/expired reference, delivery to Claude off),
+the inbound thread queues a "reply discarded" mail through the same outbox. The mail starts with the usual
+`Progetto:`/`Project:` lines, which the inbound parser recognises as ccmail's own text, so it can never trigger
+another discard mail. Capped at 5 an hour.
+
 ## Hooks and daemon
 
 Hooks are tiny: `python -m ccmail hook` forwards the hook JSON to the daemon on `127.0.0.1` and always exits 0 (if the daemon is down it starts it, and as a last resort spools the event to disk). All decisions — filtering, cooldowns, redaction, retries — happen in the daemon.

@@ -4,6 +4,9 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 ## Unreleased
 
+- `setup` checks whether `mail-notify` is available in the terminal being used and, when it is not (for example
+  Microsoft Store Python), prints the next steps with `python -m ccmail` already filled in and says the short command
+  will work from a new terminal.
 - Claude Code plugin marketplace in this repository (`.claude-plugin/marketplace.json`, plugin in
   `plugins/mail-notify`): `/plugin marketplace add lobascioemanuele-droid/mail-notify`, then
   `/plugin install mail-notify@mail-notify`. It ships only the skill (same file as the packaged one, checked by a

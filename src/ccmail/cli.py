@@ -4,6 +4,7 @@ import getpass
 import http.client
 import json
 import os
+import shutil
 import socket
 import sys
 import time
@@ -299,6 +300,18 @@ def cmd_uninstall_hooks(a):
     return 0
 
 
+def runnable_name() -> str:
+    """How to type this program in the CURRENT terminal: `mail-notify` when it is on PATH (checked now), else
+    `python -m ccmail`, which works wherever the package is installed (Microsoft Store Python does not put its
+    Scripts folder on PATH)."""
+    if shutil.which("mail-notify") or shutil.which("ccmail"):
+        return "mail-notify"
+    for exe in ("python", "py"):
+        if shutil.which(exe):
+            return f"{exe} -m ccmail"
+    return f'"{sys.executable}" -m ccmail'
+
+
 def cmd_setup(a):
     """Everything that is not the password: the hooks, the skill and the short command (and, on request, the start
     at logon). `init` stays separate on purpose: the password is typed by the user, in their own terminal."""
@@ -309,14 +322,18 @@ def cmd_setup(a):
     if not getattr(a, "no_skill", False):  # the skill can come from the Claude Code plugin instead
         cmd_install_skill(_Opts)
     print()
+    prog = runnable_name()
+    if prog != "mail-notify":
+        print(_("In questo terminale «mail-notify» non è ancora riconosciuto: finché non ne apri uno nuovo scrivi "
+                f"«{prog}» al suo posto (stessi comandi).",
+                "«mail-notify» is not recognised in this terminal yet: until you open a new one, type "
+                f"«{prog}» instead (same commands)."))
     if not credstore.describe():
-        print(_("Prossimo passo: «mail-notify init» (indirizzo e password per le app), poi «mail-notify on» e "
-                "«mail-notify test».",
-                "Next step: «mail-notify init» (address and app password), then «mail-notify on» and "
-                "«mail-notify test»."))
+        print(_(f"Prossimo passo: «{prog} init» (indirizzo e password per le app), poi «{prog} on» e «{prog} test».",
+                f"Next step: «{prog} init» (address and app password), then «{prog} on» and «{prog} test»."))
     else:
-        print(_("Credenziali già presenti. Prossimo passo: «mail-notify on» e «mail-notify test».",
-                "Credentials already set up. Next step: «mail-notify on» and «mail-notify test»."))
+        print(_(f"Credenziali già presenti. Prossimo passo: «{prog} on» e «{prog} test».",
+                f"Credentials already set up. Next step: «{prog} on» and «{prog} test»."))
     print(_("Riavvia Claude Code: hook e skill si leggono all'avvio.",
             "Restart Claude Code: hooks and skill are read at startup."))
     return 0

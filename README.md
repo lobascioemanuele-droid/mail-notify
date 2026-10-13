@@ -78,8 +78,9 @@ To install the development version from the repository instead of PyPI, replace 
 `git+https://github.com/lobascioemanuele-droid/mail-notify` in any of the commands above.
 
 If, afterwards, the terminal says `mail-notify` is not recognised (typical with Microsoft Store Python, whose
-Scripts folder is not on `PATH`), use `python -m ccmail` in place of `mail-notify` in every step below. Step 3
-(`setup`) then creates the short `mail-notify` command in a folder that is already on `PATH`.
+Scripts folder is not on `PATH`), type `python -m ccmail` in place of `mail-notify` for steps 2 and 3. `setup`
+(step 3) creates the short `mail-notify` command in a folder that is already on `PATH`, and when the command is
+not available in the terminal you are using it prints the next steps with `python -m ccmail` already filled in.
 
 ### Step 2: set up the sender account
 

@@ -55,6 +55,27 @@ class SetupTests(TmpHome):
         stop_cmds = [h["command"] for g in settings["hooks"]["Stop"] for h in g["hooks"]]
         self.assertEqual(len(stop_cmds), len(set(stop_cmds)))  # no duplicated hook entries
 
+    def test_next_steps_use_python_dash_m_when_the_short_command_is_not_on_path(self):
+        which = lambda name: {"python": "C:/Python/python.exe"}.get(name)  # noqa: E731  no mail-notify/ccmail
+        with mock.patch.object(cli.shutil, "which", side_effect=which):
+            self.assertEqual(cli.runnable_name(), "python -m ccmail")
+            code, out = self.run_cli("setup")
+        self.assertEqual(code, 0)
+        self.assertIn("python -m ccmail init", out)
+        self.assertIn("non è ancora riconosciuto", out)
+
+    def test_next_steps_use_the_short_command_when_it_is_on_path(self):
+        with mock.patch.object(cli.shutil, "which", side_effect=lambda n: "C:/bin/mail-notify.cmd"):
+            self.assertEqual(cli.runnable_name(), "mail-notify")
+            code, out = self.run_cli("setup")
+        self.assertIn("«mail-notify init»", out)
+        self.assertNotIn("non è ancora riconosciuto", out)
+
+    def test_falls_back_to_the_interpreter_path_when_nothing_is_on_path(self):
+        with mock.patch.object(cli.shutil, "which", return_value=None):
+            self.assertTrue(cli.runnable_name().endswith("-m ccmail"))
+            self.assertIn("python", cli.runnable_name().lower())
+
     def test_no_skill_leaves_the_skill_to_the_plugin(self):
         code, out = self.run_cli("setup", "--no-skill")
         self.assertEqual(code, 0)

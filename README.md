@@ -100,6 +100,37 @@ Where to create an app password:
 - iCloud: https://account.apple.com/account/manage
 - Yahoo: https://login.yahoo.com/account/security
 
+#### Gmail, step by step: create the app password
+
+An app password is a 16-letter password that Google generates for one program only. It is not your Google password,
+it can be revoked at any time, and it works only if 2-step verification is on.
+
+1. Open https://myaccount.google.com/security and sign in with the Gmail account that will **send** the mails.
+2. Under "How you sign in to Google", make sure **2-Step Verification** is **On**. If it is not, open it and follow
+   the steps (a phone number or an authenticator app); the app-password page does not appear without it.
+3. Open https://myaccount.google.com/apppasswords. If the page says the setting is not available, go back to point 2
+   (or see the notes below).
+4. In "App name" type something recognisable, for example `mail-notify`, and press **Create**.
+5. Google shows a **16-letter password** in a yellow box, in four groups of four. Copy it now: it is shown only once.
+   If you lose it, delete it from the same page and create another.
+6. In your own terminal run `mail-notify init`. Answer the prompts:
+   - sender address: the Gmail address from point 1;
+   - provider: `gmail`;
+   - app password: paste the 16 letters (the prompt is hidden, so nothing appears; spaces are ignored; right-click
+     pastes in most Windows terminals);
+   - recipient: press Enter to send the notifications to the same address, or type another one.
+7. Check it: `mail-notify on`, then `mail-notify test`. A mail should arrive within a minute (look in Spam the first
+   time). If it does not, `mail-notify doctor --network` says which step fails.
+
+Notes:
+
+- **Work or school Google accounts** (Google Workspace) may have app passwords disabled by the administrator. In
+  that case use a personal Gmail address as sender, and the work address as recipient if you wish.
+- The same app password is used to read your replies (IMAP) when reply-by-mail is on; no second password is needed.
+- To revoke it: open https://myaccount.google.com/apppasswords again and delete the `mail-notify` entry. Then run
+  `mail-notify init` with a new one.
+- Never paste the app password into a chat, a file or an issue, and do not send it to anyone.
+
 ### Step 3: install the hooks, the skill and the short command
 
 ```bash

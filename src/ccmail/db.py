@@ -1,5 +1,6 @@
 """SQLite storage. No secrets are ever stored here."""
 import json
+import re
 import sqlite3
 import threading
 import time
@@ -196,8 +197,10 @@ class DB:
         return (session_row or {}).get("title") or ""
 
     def set_session(self, sid, **fields):
+        if any(not re.fullmatch(r"[a-z_]+", k) for k in fields):
+            raise ValueError("invalid column name")  # names come from code; refuse anything but a plain name
         cols = ", ".join(f"{k}=?" for k in fields)
-        self.x(f"UPDATE sessions SET {cols} WHERE session_id=?", (*fields.values(), sid))
+        self.x(f"UPDATE sessions SET {cols} WHERE session_id=?", (*fields.values(), sid))  # nosec B608
 
     # --- events / outbox ---
     def add_event(self, now, sid, event, ntype, summary, decision) -> int:

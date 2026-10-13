@@ -365,8 +365,8 @@ class Handler(BaseHTTPRequestHandler):
                 limit = min(max(int(qs.get("limit", ["100"])[0]), 1), 500)
             except ValueError:
                 raise ValueError("limit must be an integer") from None
-            sql = "SELECT * FROM events" + (" WHERE " + " AND ".join(where) if where else "") + \
-                  " ORDER BY id DESC LIMIT ?"
+            clause = (" WHERE " + " AND ".join(where)) if where else ""
+            sql = "SELECT * FROM events" + clause + " ORDER BY id DESC LIMIT ?"  # nosec B608: constants, bound values
             return self._json(200, db.q(sql, (*args, limit)))
         if (method, path) == ("GET", "/v1/outbox"):
             return self._json(200, db.q("SELECT id, created_at, subject, status, attempts, last_error, sent_at "
@@ -429,18 +429,22 @@ def status_dict(db) -> dict:
         pass
     warnings = []
     if cred and not credstore.is_secure(cred[1]):
-        warnings.append("Credenziali nel file di riserva: l'archivio sicuro del sistema non è disponibile.")
+        warnings.append(i18n.pick(s, "Credenziali nel file di riserva: l'archivio sicuro del sistema non è disponibile.",
+                                  "Credentials in the fallback file: the system's secure store is not available."))
     if not cred:
-        warnings.append("Credenziali non configurate: esegui 'ccmail init' in un terminale.")
+        warnings.append(i18n.pick(s, "Credenziali non configurate: esegui 'ccmail init' in un terminale.",
+                                  "Credentials not configured: run 'ccmail init' in a terminal."))
     try:
         hooks = installer.is_installed()
     except Exception:
         hooks = False
     if not hooks:
-        warnings.append("Hook non installati in settings.json: esegui 'ccmail install-hooks'.")
+        warnings.append(i18n.pick(s, "Hook non installati in settings.json: esegui 'ccmail install-hooks'.",
+                                  "Hooks not installed in settings.json: run 'ccmail install-hooks'."))
     combo = config.check_combo(s)
     if combo:  # legacy value saved before the rule existed: the watchdog is paused until it is fixed
-        warnings.append("Watchdog in pausa: " + combo.split(": ", 1)[1] + ". Correggilo in Regole.")
+        warnings.append(i18n.pick(s, "Watchdog in pausa: " + combo.split(": ", 1)[1] + ". Correggilo in Regole.",
+                                  "Watchdog paused: " + combo.split(": ", 1)[1] + ". Fix it in Rules."))
     return {"version": __version__, "enabled": s["enabled"], "credentials": bool(cred),
             "sender": cred[0] if cred else None, "credential_backend": cred[1] if cred else None,
             "hooks_installed": hooks, "outbox": db.outbox_counts(), "warnings": warnings}

@@ -213,7 +213,7 @@ def default_target() -> str:
     if not home:
         return TARGET
     import hashlib
-    return f"{TARGET}:{hashlib.sha1(os.path.abspath(home).lower().encode()).hexdigest()[:10]}"
+    return f"{TARGET}:{hashlib.sha1(os.path.abspath(home).lower().encode(), usedforsecurity=False).hexdigest()[:10]}"
 
 
 def _file_path():

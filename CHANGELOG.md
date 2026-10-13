@@ -10,6 +10,8 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
   `summary_chars` is 1200. The scrollable box of the HTML mail holds the complete answer (in `full` mode, the part
   that is not already shown above it).
 - `install-skill` and `install-hooks` also create the short `mail-notify` command, so there is no third step.
+- Summary lines are short (about 130 characters; one bullet per section; a table is named by its first column),
+  the default `summary_chars` is 800, and the box no longer repeats the sentences the answer starts with.
 
 ### Added (command name)
 - `mail-notify` is a command of its own (console script next to `ccmail`), and `install-cli` / `uninstall-cli` write

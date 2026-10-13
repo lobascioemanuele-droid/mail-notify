@@ -917,7 +917,7 @@
   // Port of ccmail/summarize.py: at most 10 short lines covering the whole message (lead, one line per
   // section, closing question); never cut mid-sentence.
   function summarizeText(text, limit) {
-    const MAX_LINES = 10, LINE_CAP = 200, ITEM_CAP = 90, LEAD_CAP = 320;
+    const MAX_LINES = 10, LINE_CAP = 130, ITEM_CAP = 100, LEAD_CAP = 220;
     const clean = (s) => s.replace(/(\*\*|__|`)/g, "").replace(/^#{1,6}\s*|^>\s*/gm, "").replace(/\s+/g, " ").replace(/^[\s\-–:]+|[\s\-–:]+$/g, "");
     const sentences = (s) => s.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ0-9"'(\[])/).map((x) => x.trim()).filter(Boolean);
     const hardCut = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, "").replace(/[,;:\s-]+$/, "") + " […]");
@@ -930,7 +930,16 @@
     const flush = () => { if (para.length) { blocks.push(["para", clean(para.join(" "))]); para = []; } };
     for (const raw of text.split(/\r?\n/)) {
       const s = raw.trim();
-      if (!s || ruleRe.test(raw) || s.startsWith("|")) { flush(); continue; }
+      if (s.startsWith("|")) {
+        flush();
+        const cells = s.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+        if (!cells.every((c) => !c || /^:?-{2,}:?$/.test(c))) {
+          const last = blocks[blocks.length - 1];
+          if (last && last[0] === "table") last[1].push(cells[0]); else blocks.push(["table", [cells[0]]]);
+        }
+        continue;
+      }
+      if (!s || ruleRe.test(raw)) { flush(); continue; }
       let m = headRe.exec(raw);
       if (m) { flush(); blocks.push(["head", clean(m[1])]); continue; }
       m = itemRe.exec(raw);
@@ -942,7 +951,7 @@
       para.push(s);
     }
     flush();
-    const bl = blocks.filter((b) => b[1]);
+    const bl = blocks.filter((b) => b[1] && (b[0] !== "table" || b[1].length > 1));
     if (!bl.length) return hardCut(clean(text), Math.min(limit, LEAD_CAP));
     const sections = [{ head: null, seq: [] }];
     for (const [k, v] of bl) {
@@ -962,7 +971,7 @@
     }
     let question = "";
     const [lk, lv] = bl[bl.length - 1];
-    if ((lk === "para" || lk === "item") && lv.endsWith("?")) {
+    if ((lk === "para" || lk === "item") && typeof lv === "string" && lv.endsWith("?")) {
       question = hardCut(lv, LEAD_CAP);
       for (const sec of sections) sec.seq = sec.seq.filter((x) => x[1] !== lv);
     }
@@ -972,10 +981,11 @@
       if (sec.head) {
         let body = "";
         if (seq.length && seq[0][0] === "para") body = firstSentence(seq[0][1]);
-        else if (seq.length) body = seq.slice(0, 2).filter((x) => x[0] === "item").map((x) => hardCut(firstSentence(x[1]), ITEM_CAP)).join(" · ");
+        else if (seq.length && seq[0][0] === "table") body = seq[0][1].slice(1, 4).map(clean).filter(Boolean).join(", ");
+        else if (seq.length && seq[0][0] === "item") body = hardCut(firstSentence(seq[0][1]), ITEM_CAP);
         if (body) entries.push(hardCut(sec.head + ": " + body.replace(/:+$/, ""), LINE_CAP));
       } else {
-        for (const [k, v] of seq) entries.push(k === "para" ? hardCut(firstSentence(v), LINE_CAP) : "• " + hardCut(firstSentence(v), LINE_CAP));
+        for (const [k, v] of seq) if (k !== "table") entries.push(k === "para" ? hardCut(firstSentence(v), LINE_CAP) : "• " + hardCut(firstSentence(v), LINE_CAP));
       }
     }
     const sample = (items, k) => {

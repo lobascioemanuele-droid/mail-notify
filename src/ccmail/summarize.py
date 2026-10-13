@@ -18,10 +18,10 @@ _HEAD = re.compile(r"^\s*#{1,6}\s+(.*\S)")
 _RULE = re.compile(r"^\s*(?:[-*_=]\s*){3,}$")
 _SENT = re.compile(r"(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ0-9\"'(\[])")
 MAX_LINES = 10    # entries in the summary, "(+N altri punti)" and the question included
-LINE_CAP = 200    # a single line longer than this is cut at a word boundary
-ITEM_CAP = 90     # bullets joined into a section line
+LINE_CAP = 130    # a single line longer than this is cut at a word boundary
+ITEM_CAP = 100    # the bullet a section line is built from
 LEAD_SENTENCES = 2
-LEAD_CAP = 320
+LEAD_CAP = 220
 
 
 def _clean(s: str) -> str:
@@ -55,7 +55,16 @@ def _blocks(text: str) -> list:
 
     for raw in text.splitlines():
         s = raw.strip()
-        if not s or _RULE.match(raw) or s.startswith("|"):
+        if s.startswith("|"):
+            flush()
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if cells and not all(re.fullmatch(r":?-{2,}:?", c) for c in cells if c):
+                if out and out[-1][0] == "table":
+                    out[-1] = ("table", out[-1][1] + [cells[0]])
+                else:
+                    out.append(("table", [cells[0]]))  # first row is the header
+            continue
+        if not s or _RULE.match(raw):
             flush()
             continue
         m = _HEAD.match(raw)
@@ -73,7 +82,7 @@ def _blocks(text: str) -> list:
             continue
         para.append(s)
     flush()
-    return [(k, v) for k, v in out if v]
+    return [(k, v) for k, v in out if v and (k != "table" or len(v) > 1)]
 
 
 def _sample(items: list, k: int) -> list:
@@ -117,7 +126,7 @@ def summarize(text: str, limit: int = 600) -> str:
 
     question = ""
     kind, val = blocks[-1]
-    if kind in ("para", "item") and val.endswith("?"):
+    if kind in ("para", "item") and isinstance(val, str) and val.endswith("?"):
         question = _hard_cut(val, LEAD_CAP)
         for sec in sections:  # do not repeat it as a body line
             sec["seq"] = [x for x in sec["seq"] if x[1] != val]
@@ -129,12 +138,16 @@ def summarize(text: str, limit: int = 600) -> str:
             body = ""
             if seq and seq[0][0] == "para":
                 body = _first_sentence(seq[0][1])  # what the section opens with; a closing paragraph is not it
-            elif seq:
-                body = " · ".join(_hard_cut(_first_sentence(v), ITEM_CAP) for k, v in seq[:2] if k == "item")
+            elif seq and seq[0][0] == "table":
+                body = ", ".join(_clean(c) for c in seq[0][1][1:4] if _clean(c))
+            elif seq and seq[0][0] == "item":
+                body = _hard_cut(_first_sentence(seq[0][1]), ITEM_CAP)
             if body:
                 entries.append(_hard_cut(f"{sec['head']}: {body.rstrip(':')}", LINE_CAP))
         else:
             for k, v in seq:
+                if k == "table":
+                    continue
                 entries.append(_hard_cut(_first_sentence(v), LINE_CAP) if k == "para"
                                else "• " + _hard_cut(_first_sentence(v), LINE_CAP))
 

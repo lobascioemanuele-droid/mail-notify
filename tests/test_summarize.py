@@ -62,6 +62,18 @@ class SummarizeTests(unittest.TestCase):
         text = "Ciao.\n\n## Esito\n- Primo punto.\n- Secondo punto.\n\nNota finale non importante."
         self.assertIn("Esito: Primo punto.", summarize(text, 1200))
 
+    def test_table_is_named_by_its_first_column(self):
+        text = ("Fatto.\n\n## Stato dei branch\n| Branch | Cosa contiene |\n|---|---|\n| web-language | lingua |\n"
+                "| summary | riassunto |\n\nDimmi com'è.")
+        s = summarize(text, 800)
+        self.assertIn("Stato dei branch: web-language, summary", s)
+        self.assertNotIn("|", s)
+
+    def test_lines_are_short(self):
+        text = "Ok.\n\n" + "\n".join(f"## S{i}\n" + ("Una frase molto lunga " * 20) + "." for i in range(3))
+        for line in summarize(text, 800).splitlines():
+            self.assertLessEqual(len(line), 160, line)
+
     def test_plain_text_only(self):
         s = summarize("Fatto. Ho sistemato il bug nel parser e aggiunto un test. Altre note lunghe " * 20, 300)
         self.assertLessEqual(len(s), 300)

@@ -84,6 +84,15 @@ class HtmlMailTests(TmpHome):
         self.assertNotIn("calc(100%", h)  # no negative margins that push the block off centre
         self.assertIn("text-align:center", h)
 
+    def test_box_holds_the_whole_answer_minus_the_start_already_shown(self):
+        shown = "Ho fatto le due cose e ti ho mandato una mail di prova.\nStato: ok"
+        full = ("Ho fatto le due cose e ti ho mandato una mail di prova. Poi ho scritto i test.\n\n"
+                "## Dettagli\n- uno\n- due")
+        out = htmlmail.strip_leading(full, shown)
+        self.assertTrue(out.startswith("Poi ho scritto i test."))
+        self.assertIn("## Dettagli", out)  # nothing after the start is removed
+        self.assertEqual(htmlmail.strip_leading("Altro testo del tutto.", shown), "Altro testo del tutto.")
+
     def test_full_message_in_scroll_box_only_when_longer(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
         self.assertIn("overflow-y:auto", h)

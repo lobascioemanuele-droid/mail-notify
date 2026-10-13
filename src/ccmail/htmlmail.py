@@ -148,6 +148,27 @@ def _suggestions(lines, to: str, ref, subject: str, tappable: bool, T) -> str:
     return "".join(out)
 
 
+def strip_leading(full: str, shown: str) -> str:
+    """The whole message without the sentences it starts with that the OUTCOME section already shows."""
+    def norm(s: str) -> str:
+        return re.sub(r"\s+", " ", re.sub(r"[*_`#>]+", "", s or "")).strip().lower()
+
+    shown_n = norm(shown)
+    parts = re.findall(r"[^.!?\n]+[.!?]*[ \t]*|\n+", full or "")
+    i = 0
+    while i < len(parts):
+        p = parts[i]
+        if not p.strip():
+            i += 1
+            continue
+        n = norm(p)
+        if len(n) >= 8 and n in shown_n:
+            i += 1
+            continue
+        break
+    return "".join(parts[i:]).strip()
+
+
 def remainder(full: str, shown: str) -> str:
     """The part of the whole message that the OUTCOME section does not already show (sentence by sentence)."""
     def norm(s: str) -> str:
@@ -224,9 +245,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
             o.append(_body_lines(lines, accent, spaced=sec_title not in OUTCOME_TITLES))
-        full = (full_text or "").strip() if sec_title in OUTCOME_TITLES else ""
-        if full and settings.get("content_mode") == "full":
-            full = remainder(full, main)  # the section already shows the start of the text: only the rest
+        full = strip_leading((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
         if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '
                      f'{_esc(T("Messaggio completo", "Full message"))}'

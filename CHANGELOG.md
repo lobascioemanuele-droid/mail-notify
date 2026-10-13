@@ -6,6 +6,9 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).
 
+The distribution (PyPI/pipx) name is `mail-notify`, matching the command and the repository; the Python module and
+the daemon keep the name `ccmail`, and `ccmail` still works as a command.
+
 ### Known limitations
 - macOS, Linux and mail providers other than Gmail (Outlook, iCloud and Yahoo presets) are covered by the
   automated tests only; real-system testing is planned for a later release.

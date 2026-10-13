@@ -1,8 +1,11 @@
-# ccmail
+# mail-notify
 
 **E-mail notifications for [Claude Code](https://code.claude.com), with a local settings web app.**
 A small daemon on your own computer mails you when Claude finishes a long task, needs a permission, hits an error or a
 usage limit, or when your background processes finish. You can answer from your phone by replying to the mail.
+
+*Naming: the package and the command are `mail-notify`; the daemon and the Python module inside are called `ccmail`
+(`ccmail` also works as a command).*
 
 [![CI](https://github.com/lobascioemanuele-droid/mail-notify/actions/workflows/ci.yml/badge.svg)](https://github.com/lobascioemanuele-droid/mail-notify/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
@@ -39,10 +42,10 @@ ccmail never asks Claude for your password.
 
 ### Step 1: install the package
 
-Install with [pipx](https://pipx.pypa.io), which keeps the program in its own environment. Once ccmail is on PyPI:
+Install with [pipx](https://pipx.pypa.io), which keeps the program in its own environment. Once mail-notify is on PyPI:
 
 ```bash
-pipx install ccmail
+pipx install mail-notify
 ```
 
 To install the current version from the repository instead:
@@ -140,7 +143,7 @@ When reply control is on, each mail tells you how to reply. Write one of these o
 Update the package (use the command that matches how you installed it):
 
 ```bash
-pipx upgrade ccmail
+pipx upgrade mail-notify
 ```
 
 ```bash
@@ -178,7 +181,7 @@ mail-notify uninstall-cli
 ```
 
 ```bash
-pipx uninstall ccmail
+pipx uninstall mail-notify
 ```
 
 Uninstalling does not delete the data folder or the stored password. Delete the data folder yourself (on Windows

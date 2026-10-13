@@ -230,10 +230,10 @@ def _ensure_cli() -> None:
     Never fatal and never overwrites a file that is not ours."""
     from . import launcher
     try:
+        if launcher.target().exists():  # ours (maybe from another python) or foreign: `install-cli` replaces ours
+            return
         path, found = launcher.install()
-    except FileExistsError:
-        return
-    except OSError:
+    except (FileExistsError, OSError):
         return
     note = "" if found else _(f" (la cartella {path.parent} non è nel PATH)", f" (the folder {path.parent} is not on PATH)")
     print(_(f"Comando breve pronto: «{launcher.NAME} open», «{launcher.NAME} status»… in un terminale nuovo.{note}",

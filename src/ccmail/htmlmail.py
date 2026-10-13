@@ -26,16 +26,17 @@ FONT = "Segoe UI,Roboto,Helvetica,Arial,sans-serif"
 
 # (words found in the subject, accent colour, tint, label it, label en); first match wins
 KINDS = (
-    (("ricevuta e messa in coda", "received and queued"), "#1d4ed8", "#dbeafe", "RICEVUTA, IN CODA", "RECEIVED, QUEUED"),
+    (("risposta ricevuta e messa in coda", "reply received and queued"), "#1d4ed8", "#dbeafe", "RICEVUTA, IN CODA", "RECEIVED, QUEUED"),
     (("comando eseguito", "command executed"), "#15803d", "#dcfce7", "COMANDO ESEGUITO", "COMMAND EXECUTED"),
     (("risposta scartata", "reply discarded"), "#b91c1c", "#fee2e2", "RISPOSTA SCARTATA", "REPLY DISCARDED"),
     (("email di prova", "test e-mail"), "#475569", "#e2e8f0", "PROVA", "TEST"),
     (("limite di utilizzo", "usage limit"), "#b45309", "#fef3c7", "LIMITE RAGGIUNTO", "LIMIT REACHED"),
     (("errore api", "api error"), "#b91c1c", "#fee2e2", "ERRORE", "ERROR"),
-    (("serve il tuo input", "input is needed"), "#1d4ed8", "#dbeafe", "SERVE IL TUO INPUT", "INPUT NEEDED"),
+    (("serve il tuo input", "your input is needed"), "#1d4ed8", "#dbeafe", "SERVE IL TUO INPUT", "INPUT NEEDED"),
     (("risposta alla tua email", "answer to your e-mail"), "#6d28d9", "#ede9fe", "RISPOSTA", "ANSWER"),
     (("sessione ferma", "session stalled"), "#b91c1c", "#fee2e2", "SESSIONE FERMA", "STALLED"),
-    (("background",), "#475569", "#e2e8f0", "IN BACKGROUND", "BACKGROUND"),
+    (("processi in background", "stato processi in background", "background processes"), "#475569", "#e2e8f0",
+     "IN BACKGROUND", "BACKGROUND"),
     (("sessione terminata", "session ended"), "#475569", "#e2e8f0", "TERMINATA", "ENDED"),
 )
 
@@ -65,9 +66,10 @@ def split_sections(body: str):
 
 
 def _kind(subject: str, T):
-    low = (subject or "").lower()
+    low = re.sub(r"^\[claude code\]\s*", "", (subject or "").lower())
+    low = low.split(": ", 1)[1] if ": " in low else low  # drop the project name: "<project>: <what happened>"
     for words, accent, tint, it, en in KINDS:
-        if any(w in low for w in words):
+        if any(low.startswith(w) for w in words):
             return accent, tint, T(it, en)
     return "#15803d", "#dcfce7", T("COMPLETATO", "DONE")
 
@@ -172,7 +174,7 @@ def _spans(s: str) -> str:
 
 def _inline(line: str) -> str:
     """One text line: headings, bullets and inline Markdown, escaped first."""
-    s = _esc(line)
+    s = _esc(line).replace("\x00", "")  # NUL is the placeholder delimiter of _spans: never let input carry it
     m = re.match(r"^\s{0,3}#{1,6}\s+(.*)$", s)
     if m:
         return "<b>" + _spans(m.group(1)) + "</b>"

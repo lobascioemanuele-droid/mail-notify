@@ -208,9 +208,9 @@ class DB:
                      "VALUES(?,?,?,?,?,?)", (now, sid, event, ntype, summary, decision))
         return cur.lastrowid
 
-    def enqueue(self, event_id, subject, body, now, full_text=None) -> int:
-        cur = self.x("INSERT INTO outbox(event_id, created_at, subject, body, next_try_at, full_text) "
-                     "VALUES(?,?,?,?,?,?)", (event_id, now, subject, body, now, full_text))
+    def enqueue(self, event_id, subject, body, now, full_text=None, kind=None) -> int:
+        cur = self.x("INSERT INTO outbox(event_id, created_at, subject, body, next_try_at, full_text, kind) "
+                     "VALUES(?,?,?,?,?,?,?)", (event_id, now, subject, body, now, full_text, kind))
         return cur.lastrowid
 
     def due_outbox(self, now):

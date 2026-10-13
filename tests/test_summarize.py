@@ -85,6 +85,10 @@ class SummarizeTests(unittest.TestCase):
         self.assertTrue(lines[0].startswith("Ho finito la verifica"))
         self.assertTrue(lines[-1].endswith("pubblicazione?"))
 
+    def test_question_that_is_the_lead_is_not_repeated(self):
+        self.assertEqual(summarize("Vuoi che proceda con la pubblicazione?", 300), "Vuoi che proceda con la pubblicazione?")
+        self.assertEqual(summarize("Ho finito. Vuoi che pubblichi?", 300), "Ho finito. Vuoi che pubblichi?")
+
     def test_plain_text_only(self):
         s = summarize("Fatto. Ho sistemato il bug nel parser e aggiunto un test. Altre note lunghe " * 20, 300)
         self.assertLessEqual(len(s), 300)

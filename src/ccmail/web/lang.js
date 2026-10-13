@@ -79,7 +79,7 @@
     if (root.nodeType === 3) { textNode(root); return; }
     if (root.nodeType !== 1) return;
     const tag = root.tagName;
-    if (tag === "SCRIPT" || tag === "STYLE") return;
+    if (tag === "SCRIPT" || tag === "STYLE" || root.hasAttribute("data-nt")) return; // data-nt: daemon/user data
     element(root);
     for (const k of root.childNodes) walk(k);
   }

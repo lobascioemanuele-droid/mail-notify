@@ -506,7 +506,7 @@
     lm.replaceChildren();
     if (ov.last_mail) {
       lm.append(h("span", { class: "muted small" }, "Ultima email inviata ", timeEl(ov.last_mail.sent_at)),
-        h("span", { class: "lastmail-subj", text: ov.last_mail.subject || "(senza oggetto)" }));
+        h("span", { class: "lastmail-subj", "data-nt": true, text: ov.last_mail.subject || "(senza oggetto)" }));
     } else {
       lm.append(h("span", { class: "muted small", text: "Nessuna email inviata finora." }));
     }
@@ -998,6 +998,7 @@
       const idx = Array.from(new Set(Array.from({ length: k }, (_, i) => Math.round(i * (items.length - 1) / (k - 1))))).sort((x, y) => x - y);
       return idx.map((i) => items[i]);
     };
+    if (question && lead.includes(question)) question = "";
     const leadLines = lead ? [lead] : [], tailLines = question ? [question] : [];
     const assemble = (chosen, hidden) => leadLines.concat(chosen, hidden > 0 ? ["(+" + hidden + " altri punti)"] : [], tailLines).join("\n");
     const room = MAX_LINES - leadLines.length - tailLines.length;
@@ -1173,7 +1174,7 @@
         : ex && ex.action ? h("button", { type: "button", class: "linkbtn", onclick: ex.action[1] }, ex.action[0], icon("arrow")) : null;
       out.replaceChildren(h("div", { class: "verdict " + (r.would_send ? "verdict-yes" : "verdict-no") }, head, act,
         h("p", { class: "field-label", text: r.would_send ? "Anteprima" : "Ecco come sarebbe stata" }),
-        h("div", { class: "mail" }, h("p", { class: "mail-subject", text: r.subject }), h("pre", { class: "mail-body", text: r.body }))));
+        h("div", { class: "mail" }, h("p", { class: "mail-subject", "data-nt": true, text: r.subject }), h("pre", { class: "mail-body", "data-nt": true, text: r.body }))));
     } catch (e) {
       if (e.status === 400) $("#sim-result").replaceChildren(h("p", { class: "banner banner-bad small", text: "Prova non valida: " + translateErr(e.message) }));
       else handleErr(e, "Simulazione non riuscita");
@@ -1350,7 +1351,7 @@
       projs.length
         ? h("ul", { class: "diag-list" }, ...projs.map((p) => h("li", null,
           okMark(!!p.enabled, "attivo", "spento"),
-          h("span", { class: "diag-name", text: p.name || "(senza nome)" }),
+          h("span", { class: "diag-name", "data-nt": true, text: p.name || "(senza nome)" }),
           h("span", { class: "diag-count", text: p.enabled ? "attivo" : "spento" }),
           h("span", { class: "mono path diag-sub", text: p.project_dir || "" }))))
         : h("p", { class: "muted small", text: "Nessun progetto ancora." })));
@@ -1510,7 +1511,7 @@
 
     const toggle = h("button", { type: "button", class: "proj-toggle", "aria-expanded": collapsed ? "false" : "true",
       "aria-controls": bodyId, "aria-describedby": sumId, dataset: { fk: "pt-" + key } },
-    icon("chevron", "proj-chev"), icon("folder", "proj-folder"), h("span", { class: "proj-name", text: name }));
+    icon("chevron", "proj-chev"), icon("folder", "proj-folder"), h("span", { class: "proj-name", "data-nt": true, text: name }));
     toggle.addEventListener("click", () => {
       const nowCollapsed = toggle.getAttribute("aria-expanded") === "true";
       toggle.setAttribute("aria-expanded", nowCollapsed ? "false" : "true");
@@ -1608,7 +1609,7 @@
     }
     return h("li", { class: "chat" + (c.archived ? " is-archived" : "") },
       h("div", { class: "chat-main" },
-        h("h4", { class: "chat-title", title, text: title }),
+        h("h4", { class: "chat-title", "data-nt": true, title, text: title }),
         h("div", { class: "chat-state" }, badge, c.state_detail ? h("span", { class: "chat-detail", text: c.state_detail }) : null),
         h("div", { class: "chat-meta" }, meta),
         sess),
@@ -1692,7 +1693,7 @@
               e.notification_type ? h("span", { class: "tag tag-type", text: ntypeName(e.notification_type) }) : null,
               decisionBadge(e.decision),
               evSessTag(e.session_id)),
-            e.summary ? h("p", { class: "ev-summary", text: e.summary }) : null,
+            e.summary ? h("p", { class: "ev-summary", "data-nt": true, text: e.summary }) : null,
             why ? h("p", { class: "ev-why", text: why }) : null));
       }));
     });
@@ -1722,7 +1723,7 @@
           });
         }
         return h("li", { class: "ob" },
-          h("div", { class: "session-head" }, badge, h("span", { class: "ob-subj", text: o.subject || "(senza oggetto)" })),
+          h("div", { class: "session-head" }, badge, h("span", { class: "ob-subj", "data-nt": true, text: o.subject || "(senza oggetto)" })),
           h("div", { class: "ob-actions" }, act),
           h("div", { class: "ob-meta" }, meta),
           o.last_error && o.status !== "sent" ? h("p", { class: "ob-err", text: (o.status === "failed" ? "Errore: " : "Ultimo errore: ") + o.last_error }) : null);
@@ -1869,7 +1870,10 @@
     let before = "it";
     try { before = localStorage.getItem("ccmail.lang") || "it"; } catch (e) { /* ignore */ }
     window.ccLang.set(want);
-    if (before !== want) location.reload(); // Intl date/relative formats are created at start-up
+    if (before !== want && window.name !== "ccmail-lang-" + want) {
+      window.name = "ccmail-lang-" + want; // reload once: works even when localStorage is blocked
+      location.reload(); // Intl date/relative formats are created at start-up
+    }
   }
 
   async function boot() {

@@ -7,7 +7,7 @@ only change in a backwards-compatible way inside 1.x, and a breaking change need
 
 | Surface | Promise |
 |---|---|
-| **Command line** | The commands and options listed in `mail-notify --help`: `init`, `on`, `off`, `status [--cwd]`, `test`, `open`, `stop`, `doctor [--network]`, `install-hooks [--autostart]`, `uninstall-hooks [--autostart]`, `install-skill`, `uninstall-skill`, `install-cli`, `uninstall-cli`, `diagnose`, `trace`, `migrate`, `daemon [--foreground]`. Exit codes: `0` success, non-zero failure. New commands and options may be added. |
+| **Command line** | The commands and options listed in `mail-notify --help`: `init`, `setup [--autostart]`, `on`, `off`, `status [--cwd]`, `test`, `open`, `stop`, `doctor [--network]`, `install-hooks [--autostart]`, `uninstall-hooks [--autostart]`, `install-skill`, `uninstall-skill`, `install-cli`, `uninstall-cli`, `diagnose`, `trace`, `migrate`, `daemon [--foreground]`. Exit codes: `0` success, non-zero failure. New commands and options may be added. |
 | **Settings** | Existing setting names keep their meaning and their allowed values. New settings get a default that preserves the previous behaviour. A setting is removed only after one minor release in which it is ignored and documented as deprecated. |
 | **Data** | The SQLite database is migrated forward automatically at start-up and never needs a manual step. Downgrading to an older minor release is not supported. Events and mails are purged after 30 days. |
 | **Reply commands** | `OFF`, `ON`, `PAUSE`/`PAUSA`/`SNOOZE`/`SLEEP [minutes]` on the first line, the `Rif: ccm-…` reference and the 14-day validity. |

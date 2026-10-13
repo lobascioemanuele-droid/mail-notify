@@ -299,6 +299,28 @@ def cmd_uninstall_hooks(a):
     return 0
 
 
+def cmd_setup(a):
+    """Everything that is not the password: the hooks, the skill and the short command (and, on request, the start
+    at logon). `init` stays separate on purpose: the password is typed by the user, in their own terminal."""
+    class _Opts:
+        autostart = bool(getattr(a, "autostart", False))
+
+    cmd_install_hooks(_Opts)
+    cmd_install_skill(_Opts)
+    print()
+    if not credstore.describe():
+        print(_("Prossimo passo: «mail-notify init» (indirizzo e password per le app), poi «mail-notify on» e "
+                "«mail-notify test».",
+                "Next step: «mail-notify init» (address and app password), then «mail-notify on» and "
+                "«mail-notify test»."))
+    else:
+        print(_("Credenziali già presenti. Prossimo passo: «mail-notify on» e «mail-notify test».",
+                "Credentials already set up. Next step: «mail-notify on» and «mail-notify test»."))
+    print(_("Riavvia Claude Code: hook e skill si leggono all'avvio.",
+            "Restart Claude Code: hooks and skill are read at startup."))
+    return 0
+
+
 def cmd_install_skill(a):
     from . import skillinstall
     r = skillinstall.install()
@@ -496,6 +518,10 @@ def main(argv=None):
     d = sub.add_parser("daemon", help="start the daemon")
     d.add_argument("--foreground", action="store_true")
     d.set_defaults(fn=cmd_daemon)
+    su = sub.add_parser("setup", help="install the hooks, the skill and the short command in one go "
+                                       "(run `init` separately: it asks for the password)")
+    su.add_argument("--autostart", action="store_true", help="also start the daemon at logon")
+    su.set_defaults(fn=cmd_setup)
     i = sub.add_parser("install-hooks", help="install the hooks in Claude Code's settings.json")
     i.add_argument("--autostart", action="store_true", help="start the daemon at logon")
     i.set_defaults(fn=cmd_install_hooks)

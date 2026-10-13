@@ -76,22 +76,26 @@ Where to create an app password:
 - iCloud: https://account.apple.com/account/manage
 - Yahoo: https://login.yahoo.com/account/security
 
-### Step 3: install the hooks and the daemon
+### Step 3: install the hooks, the skill and the short command
 
 ```bash
-mail-notify install-hooks --autostart
+mail-notify setup --autostart
 ```
 
-This adds ccmail's hooks to Claude Code's settings (a backup of the file is made first), starts the background daemon
-at logon, and creates the short `mail-notify` command if it is missing. Nothing is sent.
+One command does all of this, and sends nothing:
 
-### Step 4: install the skill, then restart Claude Code
+- adds ccmail's hooks to Claude Code's settings (a backup of the file is made first);
+- copies the `/mail-notify` skill to `~/.claude/skills/mail-notify/`;
+- creates the short `mail-notify` command if it is missing;
+- with `--autostart`, starts the background daemon at logon.
 
-```bash
-mail-notify install-skill
-```
+It never asks for the password (that is `init`, step 2) and can be run again at any time. The three parts are also
+available one by one: `install-hooks`, `install-skill` and `install-cli`.
 
-Restart Claude Code afterwards: hooks and skills are read at startup.
+### Step 4: restart Claude Code
+
+Close and reopen Claude Code: hooks and skills are read at startup. After that `/mail-notify` appears in the list of
+skills.
 
 ### Step 5: turn it on and test it
 
@@ -153,11 +157,7 @@ pipx install --force git+https://github.com/lobascioemanuele-droid/mail-notify
 Then refresh the hooks and the skill, and restart Claude Code:
 
 ```bash
-mail-notify install-hooks
-```
-
-```bash
-mail-notify install-skill
+mail-notify setup
 ```
 
 ### Uninstalling
@@ -304,7 +304,7 @@ Details and the threat model: [SECURITY.md](SECURITY.md). Report vulnerabilities
 
 ## Commands
 
-`init` · `on` · `off` · `status [--cwd DIR]` · `test` · `open` · `stop` · `doctor [--network]` · `install-hooks
+`init` · `setup [--autostart]` · `on` · `off` · `status [--cwd DIR]` · `test` · `open` · `stop` · `doctor [--network]` · `install-hooks
 [--autostart]` · `uninstall-hooks [--autostart]` · `install-skill` · `uninstall-skill` · `diagnose` · `trace on|off|show`
 · `migrate` · `daemon [--foreground]` · `install-cli` · `uninstall-cli`.
 

@@ -6,6 +6,9 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).
 
+New: `mail-notify setup [--autostart]` installs the hooks, the skill and the short command in one step (`init`
+stays separate: it asks for the password).
+
 Fixed before release: `status` and `stop` no longer treat an answer from a foreign daemon (HTTP 401/403, for
 example another data folder's) as "our daemon is running"; the source distribution now ships the full test suite
 (`MANIFEST.in`).

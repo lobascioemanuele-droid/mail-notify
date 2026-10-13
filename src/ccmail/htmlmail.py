@@ -153,23 +153,31 @@ CODE_BG = "#e9ecef"
 MONO = "Consolas,Menlo,'Courier New',monospace"
 
 
+def _spans(s: str) -> str:
+    """Inline Markdown of one already-escaped line: `code` is kept verbatim, **bold** / __bold__ may contain code
+    spans, *italic* is italic."""
+    codes = []
+
+    def keep(m):
+        codes.append(m.group(1))
+        return f"\x00{len(codes) - 1}\x00"
+
+    s = re.sub(r"`([^`\n]+)`", keep, s)
+    s = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda x: "<b>" + (x.group(1) or x.group(2)) + "</b>", s)
+    s = re.sub(r"(?<![*\w])\*([^*\s][^*\n]*?)\*(?![*\w])", lambda x: "<i>" + x.group(1) + "</i>", s)
+    return re.sub(r"\x00(\d+)\x00",
+                  lambda m: (f'<span style="font-family:{MONO};background:{CODE_BG};border-radius:4px;'
+                             f'padding:1px 5px;font-size:12.5px">{codes[int(m.group(1))]}</span>'), s)
+
+
 def _inline(line: str) -> str:
-    """One text line (already HTML-escaped by us below): headings, bullets, **bold**, `code`."""
+    """One text line: headings, bullets and inline Markdown, escaped first."""
     s = _esc(line)
     m = re.match(r"^\s{0,3}#{1,6}\s+(.*)$", s)
     if m:
-        return "<b>" + m.group(1) + "</b>"
+        return "<b>" + _spans(m.group(1)) + "</b>"
     s = re.sub(r"^(\s*)[-*]\s+", lambda x: x.group(1) + "• ", s)
-    parts = re.split(r"(`[^`\n]+`)", s)  # code spans are kept verbatim: no bold/italic inside them
-    for i, part in enumerate(parts):
-        if i % 2:
-            parts[i] = (f'<span style="font-family:{MONO};background:{CODE_BG};border-radius:4px;padding:1px 5px;'
-                        f'font-size:12.5px">{part[1:-1]}</span>')
-        else:
-            parts[i] = re.sub(r"\*\*([^*\n]+)\*\*|__([^_\n]+)__",
-                              lambda x: "<b>" + (x.group(1) or x.group(2)) + "</b>", part)
-    s = "".join(parts)
-    return s
+    return _spans(s)
 
 
 def md_to_html(text: str) -> str:
@@ -290,7 +298,10 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         if sec_title.upper().startswith(("COMANDI", "SUGGESTED")):
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
-            o.append(_body_lines(lines, accent, spaced=sec_title not in OUTCOME_TITLES))
+            if sec_title in OUTCOME_TITLES and settings.get("content_mode") == "full":
+                o.append(f'<div style="font-size:14.5px;line-height:1.55;color:{INK}">{md_to_html(main)}</div>')
+            else:
+                o.append(_body_lines(lines, accent, spaced=sec_title not in OUTCOME_TITLES))
         full = strip_leading((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
         if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '

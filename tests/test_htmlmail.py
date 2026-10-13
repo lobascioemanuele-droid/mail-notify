@@ -107,6 +107,22 @@ class HtmlMailTests(TmpHome):
         self.assertIn("• primo punto", h)
         self.assertIn("__init__</span>", h)  # no bold inside inline code
 
+    def test_bold_may_contain_code_and_titles_are_not_left_with_asterisks(self):
+        h = htmlmail.md_to_html("1. **Comando `mail-notify` automatico**: per chi installa\n\n"
+                                "## Titolo con `codice`\n- **Validazione:** ok *corsivo*")
+        self.assertNotIn("**", h)
+        self.assertNotIn("`", h)
+        self.assertIn("<b>Comando <span", h)
+        self.assertIn("<i>corsivo</i>", h)
+        self.assertEqual(htmlmail._inline("Calcolo 2*3*4"), "Calcolo 2*3*4")  # not italic
+
+    def test_full_mode_outcome_is_formatted_too(self):
+        s = {**self.s, "content_mode": "full"}
+        body = ("Progetto: demo\nAccount: A\n\n" + "─" * 30 + "\nESITO\n**Titolo** con `codice`\n- uno\n")
+        h = htmlmail.render("[Claude Code] demo: ok", body, s, "me@example.com")
+        self.assertNotIn("**Titolo**", h)
+        self.assertIn("<b>Titolo</b>", h)
+
     def test_markdown_rendering_escapes_html(self):
         h = htmlmail.md_to_html("Testo <script>alert(1)</script> e `<b>x</b>`\n\n```\n<img src=x onerror=1>\n```")
         self.assertNotIn("<script>", h)

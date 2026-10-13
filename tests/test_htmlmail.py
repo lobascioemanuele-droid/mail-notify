@@ -21,27 +21,53 @@ class HtmlMailTests(TmpHome):
             "Stop", {"hook_event_name": "Stop", "session_id": "abcdef1234", "last_assistant_message": FULL},
             self.s, "proj", 400, chat_title="Chat prova", ref=REF, inbound=True, to_claude=True)
 
+    @staticmethod
+    def bodies(h):
+        return [parse_qs(urlparse(l.replace("&amp;", "&")).query)["body"][0]
+                for l in re.findall(r'href="(mailto:[^"]+)"', h)]
+
     def test_buttons_are_mailto_with_command_and_ref(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
-        links = re.findall(r'href="(mailto:[^"]+)"', h)
-        self.assertEqual(len(links), 7)  # OFF, ON, PAUSA 60, three more pauses, write to Claude
-        cmds = []
-        for l in links:
+        bodies = self.bodies(h)
+        for l in re.findall(r'href="(mailto:[^"]+)"', h):
             u = urlparse(l.replace("&amp;", "&"))
             self.assertEqual(unquote(u.path), "me@example.com")
             q = parse_qs(u.query)
             self.assertTrue(q["subject"][0].startswith("Re: [Claude Code]"))
             self.assertIn("Rif: " + REF, q["body"][0])
-            cmds.append(q["body"][0].split("\n")[0])
-        self.assertEqual(cmds[:3], ["OFF", "ON", "PAUSA 60"])
+        cmds = [b.splitlines()[0] for b in bodies]
+        for c in ("OFF", "ON", "PAUSA 60", "PAUSA 15", "PAUSA 180", "PAUSA 480"):
+            self.assertIn(c, cmds)
 
     def test_button_text_is_a_command_the_inbound_parser_accepts(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
-        for l in re.findall(r'href="(mailto:[^"]+)"', h)[:6]:
-            body = parse_qs(urlparse(l.replace("&amp;", "&")).query)["body"][0]
-            if not body.strip().startswith("Rif:"):  # the 'write to Claude' link has no command on purpose
-                self.assertIsNotNone(inbound.parse_command(body))
-            self.assertIn(REF, inbound.REF_RE.findall(body))
+        for b in self.bodies(h):
+            first = b.splitlines()[0]
+            if first.split(" ")[0] in ("OFF", "ON", "PAUSA"):
+                self.assertIsNotNone(inbound.parse_command(b))
+            self.assertIn(REF, inbound.REF_RE.findall(b))
+
+    def test_suggested_commands_are_tappable_and_aligned(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        texts = [ln.strip().split(". ", 1)[1] for ln in self.body.splitlines()
+                 if re.match(r"^\s+\d+\. ", ln)]
+        self.assertTrue(texts)
+        sent = [b.splitlines()[0] for b in self.bodies(h)]
+        for t in texts:
+            self.assertIn(t, sent)  # each one is a link whose reply text is the command itself
+        self.assertIn("border:1px solid #000000", h)
+        self.assertIn('width="26"', h)  # number column: wrapped text stays under the text, not under the number
+
+    def test_suggested_commands_not_links_when_delivery_to_claude_is_off(self):
+        s = {**self.s, "inbound_to_claude": False}
+        h = htmlmail.render(self.subject, self.body, s, "me@example.com", FULL)
+        self.assertNotIn("border:1px solid #000000", h)
+        self.assertNotIn("Scrivi a Claude", h)
+
+    def test_cards_share_width_and_height(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        self.assertIn("table-layout:fixed", h)
+        self.assertEqual(h.count('<td width="33%"'), 3)
 
     def test_full_message_in_scroll_box_only_when_longer(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)

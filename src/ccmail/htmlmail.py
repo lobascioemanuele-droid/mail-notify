@@ -14,6 +14,7 @@ import html
 import re
 from urllib.parse import quote
 
+from . import inbound
 from .i18n import pick
 from .render import DIVIDER
 
@@ -80,11 +81,16 @@ def _meta_grid(ctx) -> str:
 
 
 def _card(href: str, glyph: str, label: str, caption: str, accent: str, tint: str) -> str:
-    return (f'<td width="33%" style="padding:0 4px"><a href="{_esc(href)}" style="display:block;text-decoration:none;'
-            f'text-align:center;background:{tint};border:1px solid {accent};border-radius:12px;padding:12px 4px">'
+    """One of three equal action cards. Style sits on the <td> (table-layout: fixed in the parent), so the cells
+    share one width and one height even when a label would wrap on a narrow phone screen."""
+    return (f'<td width="33%" valign="top" style="background:{tint};border:1px solid {accent};'
+            f'border-radius:12px;text-align:center">'
+            f'<a href="{_esc(href)}" style="display:block;text-decoration:none;padding:12px 2px">'
             f'<div style="font-size:20px;line-height:24px;color:{accent};font-weight:bold">{glyph}</div>'
-            f'<div style="font-size:14px;font-weight:700;color:{accent};margin-top:2px">{_esc(label)}</div>'
-            f'<div style="font-size:11px;color:{MUTED};margin-top:2px">{_esc(caption)}</div></a></td>')
+            f'<div style="font-size:14px;line-height:18px;font-weight:700;color:{accent};margin-top:2px">'
+            f'{_esc(label)}</div>'
+            f'<div style="font-size:11px;line-height:14px;color:{MUTED};margin-top:2px">{_esc(caption)}</div>'
+            f'</a></td>')
 
 
 def _chip(href: str, label: str) -> str:
@@ -102,6 +108,38 @@ def _paragraphs(lines, size="14.5px") -> str:
     text = "\n".join(lines).strip()
     return (f'<div style="font-size:{size};line-height:1.55;color:{INK};white-space:pre-wrap">{_esc(text)}</div>'
             if text else "")
+
+
+_ITEM = re.compile(r"^\s*(\d+)\.\s+(.*\S)\s*$")
+
+
+def _suggestions(lines, to: str, ref, subject: str, tappable: bool, T) -> str:
+    intro, rows = [], []
+    for ln in lines:
+        m = _ITEM.match(ln)
+        if m:
+            rows.append((m.group(1), m.group(2)))
+        elif ln.strip():
+            intro.append(ln.strip())
+    out = [f'<div style="font-size:13px;color:{MUTED};margin:0 0 10px">{_esc(" ".join(intro))}</div>'] if intro else []
+    for num, text in rows:
+        cell = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+                f'style="border-collapse:collapse;table-layout:fixed"><tr>'
+                f'<td width="26" valign="top" style="font-size:14px;line-height:1.5;font-weight:700;color:{INK}">'
+                f'{_esc(num)}.</td>'
+                f'<td valign="top" style="font-size:14px;line-height:1.5;color:{INK};word-wrap:break-word">'
+                f'{_esc(text)}</td></tr></table>')
+        if tappable and inbound.parse_command(text) is None:
+            out.append(f'<a href="{_esc(mailto(to, subject, text, ref))}" style="display:block;margin:0 0 8px;'
+                       f'padding:9px 11px;border:1px solid #000000;border-radius:0;background:transparent;'
+                       f'text-decoration:none;color:{INK}">{cell}</a>')
+        else:
+            out.append(f'<div style="margin:0 0 8px;padding:2px 0">{cell}</div>')
+    if rows and tappable:
+        out.append(f'<div style="font-size:11px;color:{MUTED};margin-top:2px">'
+                   + _esc(T("Tocca un comando per mandarlo a Claude: si apre una risposta già compilata, premi Invia.",
+                            "Tap a command to send it to Claude: a pre-filled reply opens, press Send.")) + "</div>")
+    return "".join(out)
 
 
 def render(subject: str, body: str, settings: dict, to: str, full_text: str = "") -> str:
@@ -126,9 +164,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         o.append(f'<div style="margin:12px 0 0;padding:14px 18px;border:1px solid {LINE};border-radius:12px;'
                  f'background:{CARD}">{_label(sec_title)}')
         if sec_title.upper().startswith(("COMANDI", "SUGGESTED")):
-            o.append(f'<div style="font-family:Consolas,Menlo,monospace;font-size:12.5px;line-height:1.7;'
-                     f'color:{INK};white-space:pre-wrap;background:{BOX};border-radius:8px;padding:10px 12px">'
-                     f'{_esc(main)}</div>')
+            o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
             o.append(_paragraphs(lines))
         full = (full_text or "").strip()
@@ -156,7 +192,8 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         o.append(f'<div style="margin:12px 0 0;padding:14px 14px 10px;border:1px solid {LINE};border-radius:12px;'
                  f'background:{CARD}"><div style="padding:0 4px">{_label(T("RISPOSTA RAPIDA", "QUICK REPLY"))}</div>'
                  f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-                 f'style="border-collapse:collapse"><tr>{cards}</tr></table>'
+                 f'style="border-collapse:separate;border-spacing:6px 0;table-layout:fixed;margin:0 -6px;'
+                 f'width:calc(100% + 12px)"><tr>{cards}</tr></table>'
                  f'<div style="padding:10px 4px 0">{talk}<span style="font-size:12px;color:{MUTED};margin-right:6px">'
                  f'{_esc(T("Altre pause:", "Other pauses:"))}</span>{extra}</div>'
                  f'<div style="padding:4px 4px 0;font-size:11px;color:{MUTED}">'

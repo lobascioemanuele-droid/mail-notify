@@ -94,8 +94,9 @@ def _card(href: str, glyph: str, label: str, caption: str, accent: str, tint: st
 
 
 def _chip(href: str, label: str) -> str:
-    return (f'<a href="{_esc(href)}" style="display:inline-block;margin:0 6px 6px 0;padding:5px 12px;'
-            f'border:1px solid {LINE};border-radius:999px;color:{INK};text-decoration:none;font-size:12px;'
+    """A rounded pill filling its (equal-width) table cell."""
+    return (f'<a href="{_esc(href)}" style="display:block;padding:7px 4px;border:1px solid {LINE};'
+            f'border-radius:999px;color:{INK};text-decoration:none;font-size:13px;text-align:center;'
             f'background:{CARD}">{label}</a>')
 
 
@@ -131,7 +132,7 @@ def _suggestions(lines, to: str, ref, subject: str, tappable: bool, T) -> str:
                 f'{_esc(text)}</td></tr></table>')
         if tappable and inbound.parse_command(text) is None:
             out.append(f'<a href="{_esc(mailto(to, subject, text, ref))}" style="display:block;margin:0 0 8px;'
-                       f'padding:9px 11px;border:1px solid #000000;border-radius:0;background:transparent;'
+                       f'padding:9px 11px;border:1px solid #000000;border-radius:0;background:#e9ecef;'
                        f'text-decoration:none;color:{INK}">{cell}</a>')
         else:
             out.append(f'<div style="margin:0 0 8px;padding:2px 0">{cell}</div>')
@@ -140,6 +141,17 @@ def _suggestions(lines, to: str, ref, subject: str, tappable: bool, T) -> str:
                    + _esc(T("Tocca un comando per mandarlo a Claude: si apre una risposta già compilata, premi Invia.",
                             "Tap a command to send it to Claude: a pre-filled reply opens, press Send.")) + "</div>")
     return "".join(out)
+
+
+def remainder(full: str, shown: str) -> str:
+    """The part of the whole message that the OUTCOME section does not already show (sentence by sentence)."""
+    def norm(s: str) -> str:
+        return re.sub(r"\s+", " ", re.sub(r"[*_`#>]+", "", s or "")).strip().lower()
+
+    shown_n = norm(re.sub(r"\[(…|\.\.\.)[^\]]*\]\s*$", "", shown or ""))
+    parts = re.findall(r"[^.!?\n]+[.!?]*[ \t]*|\n+", full or "")
+    keep = [x for x in parts if not (len(norm(x)) >= 8 and norm(x) in shown_n)]
+    return re.sub(r"\n{3,}", "\n\n", "".join(keep)).strip()
 
 
 def render(subject: str, body: str, settings: dict, to: str, full_text: str = "") -> str:
@@ -167,10 +179,10 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
             o.append(_paragraphs(lines))
-        full = (full_text or "").strip()
-        if sec_title in OUTCOME_TITLES and full and len(full) > len(main) + 20:
+        full = remainder((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
+        if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '
-                     f'{_esc(T("Messaggio completo: scorri dentro il riquadro", "Full message: scroll inside the box"))}'
+                     f'{_esc(T("Messaggio completo", "Full message"))}'
                      f' ({len(full)} {_esc(T("caratteri", "characters"))})</div>'
                      f'<div style="max-height:260px;overflow-y:auto;overflow-x:hidden;background:{BOX};'
                      f'border:1px solid {LINE};border-left:4px solid {accent};border-radius:8px;padding:12px 14px;'
@@ -184,19 +196,19 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
                          T("questo progetto", "this project"), "#15803d", "#f0fdf4")
                  + _card(mailto(to, subject, "PAUSA 60", ref), "&#10074;&#10074;", T("Pausa 1 ora", "Pause 1 hour"),
                          T("tutti i progetti", "all projects"), "#b45309", "#fffbeb"))
-        extra = "".join(_chip(mailto(to, subject, f"PAUSA {n}", ref), _esc(lab))
-                        for n, lab in ((15, "15 min"), (180, T("3 ore", "3 hours")), (480, T("8 ore", "8 hours"))))
-        talk = (_chip(mailto(to, subject, "", ref),
-                      "&#9998; " + _esc(T("Scrivi a Claude in questa chat", "Write to Claude in this chat")))
+        pauses = "".join(f'<td width="33%" valign="top" style="padding:0">{_chip(mailto(to, subject, f"PAUSA {n}", ref), _esc(lab))}</td>'
+                         for n, lab in ((15, "15 min"), (180, T("3 ore", "3 hours")), (480, T("8 ore", "8 hours"))))
+        talk = (f'<div style="margin:12px 0 0">{_chip(mailto(to, subject, "", ref), "&#9998; " + _esc(T("Scrivi a Claude in questa chat", "Write to Claude in this chat")))}</div>'
                 if settings.get("inbound_to_claude") else "")
-        o.append(f'<div style="margin:12px 0 0;padding:14px 14px 10px;border:1px solid {LINE};border-radius:12px;'
-                 f'background:{CARD}"><div style="padding:0 4px">{_label(T("RISPOSTA RAPIDA", "QUICK REPLY"))}</div>'
-                 f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-                 f'style="border-collapse:separate;border-spacing:6px 0;table-layout:fixed;margin:0 -6px;'
-                 f'width:calc(100% + 12px)"><tr>{cards}</tr></table>'
-                 f'<div style="padding:10px 4px 0">{talk}<span style="font-size:12px;color:{MUTED};margin-right:6px">'
-                 f'{_esc(T("Altre pause:", "Other pauses:"))}</span>{extra}</div>'
-                 f'<div style="padding:4px 4px 0;font-size:11px;color:{MUTED}">'
+        table = ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+                 'style="border-collapse:separate;border-spacing:6px 0;table-layout:fixed">')
+        o.append(f'<div style="margin:12px 0 0;padding:14px;border:1px solid {LINE};border-radius:12px;'
+                 f'background:{CARD};text-align:center">{_label(T("RISPOSTA RAPIDA", "QUICK REPLY"))}'
+                 f'{table}<tr>{cards}</tr></table>'
+                 f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">'
+                 f'{_esc(T("Altre pause (tutti i progetti)", "Other pauses (all projects)"))}</div>'
+                 f'{table}<tr>{pauses}</tr></table>{talk}'
+                 f'<div style="margin-top:12px;font-size:11px;color:{MUTED}">'
                  + _esc(T("Si apre una risposta già compilata: premi Invia.", "A pre-filled reply opens: press Send."))
                  + f' &middot; {_esc(ref)}</div></div>')
     o.append("</div>")

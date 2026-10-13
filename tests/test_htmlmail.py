@@ -67,7 +67,22 @@ class HtmlMailTests(TmpHome):
     def test_cards_share_width_and_height(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
         self.assertIn("table-layout:fixed", h)
-        self.assertEqual(h.count('<td width="33%"'), 3)
+        self.assertEqual(h.count('<td width="33%"'), 6)  # three action cards + three pause cells
+
+    def test_scroll_box_repeats_nothing_already_shown_above(self):
+        shown = "Ho verificato i dati. Tutto coerente."
+        rest = htmlmail.remainder("Ho verificato i dati. Dettaglio uno. Dettaglio due. Tutto coerente.", shown)
+        self.assertNotIn("Ho verificato i dati", rest)
+        self.assertNotIn("Tutto coerente", rest)
+        self.assertIn("Dettaglio uno. Dettaglio due.", rest)
+        self.assertEqual(htmlmail.remainder("Solo questo.", "Solo questo. [… messaggio completo: 12 caratteri]"), "")
+
+    def test_box_label_has_no_scroll_hint_and_pauses_share_one_row(self):
+        h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
+        self.assertNotIn("scorri dentro", h)
+        self.assertEqual(h.count('<td width="33%"'), 6)  # 3 action cards + 3 pause cells
+        self.assertNotIn("calc(100%", h)  # no negative margins that push the block off centre
+        self.assertIn("text-align:center", h)
 
     def test_full_message_in_scroll_box_only_when_longer(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)

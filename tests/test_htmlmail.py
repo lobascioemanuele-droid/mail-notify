@@ -93,6 +93,32 @@ class HtmlMailTests(TmpHome):
         self.assertIn("## Dettagli", out)  # nothing after the start is removed
         self.assertEqual(htmlmail.strip_leading("Altro testo del tutto.", shown), "Altro testo del tutto.")
 
+    def test_markdown_in_the_box_is_formatted_not_shown_raw(self):
+        md = ("## Cosa fare\n\nEsegui **una volta** il comando `python -m ccmail install-cli` poi:\n\n"
+              "```bash\npython -m ccmail open\n```\n\n- primo punto\n- secondo `__init__` punto")
+        h = htmlmail.md_to_html(md)
+        self.assertNotIn("```", h)
+        self.assertNotIn("**", h)
+        self.assertNotIn("##", h)
+        self.assertIn("<b>una volta</b>", h)
+        self.assertIn("<b>Cosa fare</b>", h)
+        self.assertIn("font-family:Consolas", h)  # code block and inline code are monospace
+        self.assertIn(">python -m ccmail open</div>", h)
+        self.assertIn("• primo punto", h)
+        self.assertIn("__init__</span>", h)  # no bold inside inline code
+
+    def test_markdown_rendering_escapes_html(self):
+        h = htmlmail.md_to_html("Testo <script>alert(1)</script> e `<b>x</b>`\n\n```\n<img src=x onerror=1>\n```")
+        self.assertNotIn("<script>", h)
+        self.assertNotIn("<img", h)
+        self.assertNotIn("<b>x</b>", h)
+        self.assertIn("&lt;script&gt;", h)
+
+    def test_unclosed_fence_is_still_a_code_block(self):
+        h = htmlmail.md_to_html("Prima\n\n```py\nprint('x')")
+        self.assertIn("print(", h)
+        self.assertNotIn("```", h)
+
     def test_full_message_in_scroll_box_only_when_longer(self):
         h = htmlmail.render(self.subject, self.body, self.s, "me@example.com", FULL)
         self.assertIn("overflow-y:auto", h)

@@ -148,6 +148,52 @@ def _suggestions(lines, to: str, ref, subject: str, tappable: bool, T) -> str:
     return "".join(out)
 
 
+_FENCE_RE = re.compile(r"```[^\n`]*\n?(.*?)(?:```|\Z)", re.S)
+CODE_BG = "#e9ecef"
+MONO = "Consolas,Menlo,'Courier New',monospace"
+
+
+def _inline(line: str) -> str:
+    """One text line (already HTML-escaped by us below): headings, bullets, **bold**, `code`."""
+    s = _esc(line)
+    m = re.match(r"^\s{0,3}#{1,6}\s+(.*)$", s)
+    if m:
+        return "<b>" + m.group(1) + "</b>"
+    s = re.sub(r"^(\s*)[-*]\s+", lambda x: x.group(1) + "• ", s)
+    parts = re.split(r"(`[^`\n]+`)", s)  # code spans are kept verbatim: no bold/italic inside them
+    for i, part in enumerate(parts):
+        if i % 2:
+            parts[i] = (f'<span style="font-family:{MONO};background:{CODE_BG};border-radius:4px;padding:1px 5px;'
+                        f'font-size:12.5px">{part[1:-1]}</span>')
+        else:
+            parts[i] = re.sub(r"\*\*([^*\n]+)\*\*|__([^_\n]+)__",
+                              lambda x: "<b>" + (x.group(1) or x.group(2)) + "</b>", part)
+    s = "".join(parts)
+    return s
+
+
+def md_to_html(text: str) -> str:
+    """The small part of Markdown that a Claude answer uses, as safe HTML: fenced code as a code block, inline
+    code, bold, headings and bullets. Everything is escaped first; the only tags are the ones written here."""
+    out, pos = [], 0
+
+    def prose(chunk: str):
+        chunk = chunk.strip("\n")
+        if chunk.strip():
+            out.append('<div style="white-space:pre-wrap">' + "\n".join(_inline(x) for x in chunk.split("\n")) + "</div>")
+
+    for m in _FENCE_RE.finditer(text or ""):
+        prose(text[pos:m.start()])
+        code = m.group(1).rstrip("\n")
+        if code.strip():
+            out.append(f'<div style="font-family:{MONO};font-size:12.5px;line-height:1.5;background:{CODE_BG};'
+                       f'border:1px solid {LINE};border-radius:6px;padding:8px 10px;margin:8px 0;'
+                       f'white-space:pre-wrap;word-wrap:break-word">{_esc(code)}</div>')
+        pos = m.end()
+    prose((text or "")[pos:])
+    return "".join(out)
+
+
 def strip_leading(full: str, shown: str) -> str:
     """The whole message without the sentences it starts with that the OUTCOME section already shows."""
     def norm(s: str) -> str:
@@ -252,8 +298,8 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
                      f' ({len(full)} {_esc(T("caratteri", "characters"))})</div>'
                      f'<div style="max-height:260px;overflow-y:auto;overflow-x:hidden;background:{BOX};'
                      f'border:1px solid {LINE};border-left:4px solid {accent};border-radius:8px;padding:12px 14px;'
-                     f'font-size:13.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word">'
-                     f'{_esc(full[:MAX_FULL])}</div>')
+                     f'font-size:13.5px;line-height:1.6;word-wrap:break-word">'
+                     f'{md_to_html(full[:MAX_FULL])}</div>')
         o.append("</div>")
     if ref and to:
         cards = (_card(mailto(to, subject, "OFF", ref), "&#10005;", "OFF",

@@ -113,9 +113,9 @@ def build_claude_ack(db, settings, session_id, text, now, project="", chat_title
                                "Your reply was verified and queued for Claude:"),
                              "  «" + render.clean_line(text, 160) + "»"),
              render._section(T("Quando arriva", "When it arrives"),
-                             T(f"Stato: {e['state']}.", f"State: {e['state']}."), e["when"])]
+                             T(f"Stato: {e['state']}.", f"State: {e['state']}."), "", e["when"])]
     if e["typical"]:
-        parts[-1] += "\n" + e["typical"]
+        parts[-1] += "\n\n" + e["typical"]
     parts.append(render._section(T("Poi", "Next"),
                                  T("Quando Claude finisce, ricevi la sua email di fine turno (se supera le "
                                    "soglie impostate).",
@@ -169,9 +169,10 @@ def build_command_ack(settings, command: str, project_name: str, detail: str, re
                       "Notifications for this project are active again."),
               "pause": T("Passato il tempo indicato le notifiche riprendono da sole.",
                          "After the indicated time notifications resume by themselves.")}.get(command, "")
-    parts = [render._section(T("Comando eseguito", "Command executed"), detail, revert)]
+    name = render.clean_line(project_name or "ccmail", 60)
+    parts = ["\n".join([T(f"Progetto: {name}", f"Project: {name}"), f"Account: {render.account_label(settings)}"]),
+             render._section(T("Comando eseguito", "Command executed"), detail, "", revert)]
     if ref:
         parts.append(render.manage_section(ref, bool(settings.get("inbound_to_claude")), settings))
-    name = render.clean_line(project_name or "ccmail", 60)
     return T(f"[Claude Code] {name}: comando eseguito", f"[Claude Code] {name}: command executed"), \
         "\n\n".join(parts) + "\n"

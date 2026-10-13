@@ -54,7 +54,10 @@ def split_sections(body: str):
     blocks = re.split(r"\n\n(?=" + re.escape(DIVIDER) + r"\n)", (body or "").strip("\n"))
     ctx = blocks[0].splitlines() if blocks else []
     sections = []
-    for b in blocks[1:]:
+    rest = blocks[1:]
+    if ctx and ctx[0] == DIVIDER:  # no context lines: the first block is already a section
+        ctx, rest = [], blocks
+    for b in rest:
         lines = b.splitlines()
         if len(lines) >= 2 and lines[0] == DIVIDER:
             sections.append((lines[1].strip(), lines[2:]))
@@ -162,13 +165,26 @@ def _quote(text: str, accent: str) -> str:
             f'word-wrap:break-word">{_esc(text)}</div>')
 
 
-def _body_lines(lines, accent: str) -> str:
+def _spaced(lines) -> str:
+    """Each line as its own block with space between them; 'Label: value' gets a bold label."""
+    out = []
+    for ln in lines:
+        s = ln.strip()
+        if not s:
+            continue
+        k, sep, v = s.partition(": ")
+        inner = (f'<b>{_esc(k)}:</b> {_esc(v)}' if sep and 0 < len(k) <= 18 and v else _esc(s))
+        out.append(f'<div style="font-size:14.5px;line-height:1.5;margin:0 0 9px;color:{INK}">{inner}</div>')
+    return "".join(out)
+
+
+def _body_lines(lines, accent: str, spaced: bool = False) -> str:
     """Plain lines as paragraphs; a line that is a quotation («…», as in confirmations) as a quote block."""
     out, buf = [], []
 
     def flush():
         if buf:
-            out.append(_paragraphs(buf))
+            out.append(_spaced(buf) if spaced else _paragraphs(buf))
             buf.clear()
 
     for ln in lines:
@@ -207,7 +223,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         if sec_title.upper().startswith(("COMANDI", "SUGGESTED")):
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
-            o.append(_body_lines(lines, accent))
+            o.append(_body_lines(lines, accent, spaced=sec_title not in OUTCOME_TITLES))
         full = remainder((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
         if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '

@@ -174,3 +174,23 @@ class ConfirmationMailTests(TmpHome):
         s = {**self.s, "language": "en"}
         subject, body = ack.build_rejection(s, "no_ref", "hi", "demo", ref=REF)
         self.assertIn("REPLY DISCARDED", htmlmail.render(subject, body, s, "me@example.com"))
+
+    def test_command_executed_has_context_and_is_not_shown_as_context(self):
+        from ccmail import ack
+        subject, body = ack.build_command_ack(self.s, "off", "demo", "Le notifiche sono state disattivate.", ref=REF)
+        self.assertTrue(body.startswith("Progetto: demo\nAccount:"))
+        ctx, sections = htmlmail.split_sections(body)
+        self.assertEqual(ctx[0], "Progetto: demo")
+        self.assertEqual(sections[0][0], "COMANDO ESEGUITO")
+        # a body that starts directly with a section (older mails) must not take the section for context lines
+        ctx2, sections2 = htmlmail.split_sections("─" * 30 + "\nESITO\nfatto\n")
+        self.assertEqual(ctx2, [])
+        self.assertEqual(sections2, [("ESITO", ["fatto"])])
+
+    def test_when_it_arrives_parts_are_separate_blocks(self):
+        from ccmail import ack
+        subject, body = ack.build_claude_ack(self.db, self.s, "s1", "Ciao", 1_000.0, project="demo", ref=REF)
+        section = body.split("QUANDO ARRIVA\n", 1)[1].split("\n\n" + "─" * 30)[0]
+        self.assertIn("\n\n", section)  # state / when / typical are separated by a blank line in plain text too
+        h = self.html(subject, body)
+        self.assertIn("<b>Stato:</b>", h)

@@ -6,6 +6,10 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).
 
+Fixed before release: `status` and `stop` no longer treat an answer from a foreign daemon (HTTP 401/403, for
+example another data folder's) as "our daemon is running"; the source distribution now ships the full test suite
+(`MANIFEST.in`).
+
 The distribution (PyPI/pipx) name is `mail-notify`, matching the command and the repository; the Python module and
 the daemon keep the name `ccmail`, and `ccmail` still works as a command.
 

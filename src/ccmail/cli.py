@@ -41,8 +41,10 @@ def _api(method, path, body=None, timeout=5):
         r = c.getresponse()
         data = json.loads(r.read() or b"{}")
         c.close()
+        if not 200 <= r.status < 300:
+            return None  # e.g. 401/403: something else (another data folder's daemon) answers on that port
         return r.status, data
-    except OSError:
+    except (OSError, ValueError):
         return None
 
 
@@ -219,7 +221,11 @@ def cmd_open(a):
     if not _ensure_daemon():
         print(_("Impossibile avviare il demone (vedi ccmail.log).", "Cannot start the daemon (see ccmail.log)."))
         return 1
-    _st, d = _api("POST", "/v1/open-nonce", {})
+    r = _api("POST", "/v1/open-nonce", {})
+    if not r:
+        print(_("Il demone non risponde (vedi ccmail.log).", "The daemon is not answering (see ccmail.log)."))
+        return 1
+    _st, d = r
     port = json.loads(paths.info_path().read_text(encoding="utf-8"))["port"]
     webbrowser.open(f"http://127.0.0.1:{port}/auth?n={d['nonce']}")
     return 0

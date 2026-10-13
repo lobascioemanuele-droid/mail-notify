@@ -1,0 +1,4 @@
+include LICENSE README.md CHANGELOG.md SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md
+recursive-include tests *.py
+recursive-include docs *.md
+global-exclude __pycache__ *.py[cod]

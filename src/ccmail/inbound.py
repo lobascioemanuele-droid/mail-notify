@@ -417,6 +417,7 @@ class Inbound(threading.Thread):
         # fetching only the Message-ID header before the (larger) full message.
         newest_first = list(reversed(nums[-MAX_SCAN:]))
         mids = self._message_ids(M, newest_first)  # ONE round trip for all headers, not one per message
+        picked = []
         for num in newest_first:
             hmid = mids.get(num.decode() if isinstance(num, bytes) else str(num), "")
             if hmid and self.db.one("SELECT 1 FROM inbound_seen WHERE msg_id=?", (hmid,)):
@@ -437,6 +438,10 @@ class Inbound(threading.Thread):
                     self.db.x("INSERT OR IGNORE INTO inbound_seen(msg_id, at) VALUES(?,?)", (mid, time.time()))
                 continue
             n += 1
+            picked.append((num, msg, sent_label))
+        # Handle them OLDEST first: two commands that arrive in the same pass (ON then OFF) must end in the
+        # state the user asked for last, not in the state of the one that happened to be listed first.
+        for num, msg, sent_label in reversed(picked):
             info = {}
             decision = handle_message(self.db, msg, expected, trusted_sent=sent_label,
                                       to_claude=bool(s.get("inbound_to_claude")), info=info)

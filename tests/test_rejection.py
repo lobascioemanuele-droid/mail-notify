@@ -88,5 +88,25 @@ class RejectionTests(TmpHome):
         self.assertNotIn("ESITO", body)
 
 
+class OrderTests(TmpHome):
+    """Commands that arrive in the same pass are applied in the order they were sent."""
+
+    def run_pass(self, first, second):
+        self.enable(time.time() - 1000)
+        self.db.set_settings({"inbound_enabled": True})
+        ref = self.db.new_mail_ref(PROJECT, time.time(), "s1")
+        msgs = [reply(first, ref, mid="<a@x>").as_bytes(), reply(second, ref, mid="<b@x>").as_bytes()]
+        with mock.patch.object(credstore, "load", return_value=(ME, "pw", "t")):
+            inbound.Inbound(self.db).poll_once({"imap_host": "imap.example.com", "recipient": ""},
+                                               imap_factory=lambda: FakeIMAP(msgs), since_ts=0)
+        return self.db.project_enabled(PROJECT)
+
+    def test_off_then_on_ends_on(self):
+        self.assertTrue(self.run_pass("OFF", "ON"))
+
+    def test_on_then_off_ends_off(self):
+        self.assertFalse(self.run_pass("ON", "OFF"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,10 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 ## Unreleased
 
+### Fixed
+- Several commands arriving in one pass (for example ON then OFF) are applied oldest first, so the project ends
+  in the state asked for last; before, the newest was applied first and the older one won.
+
 ### Added
 - A verified reply that cannot be delivered (no chat tied to the mail, unknown or expired reference, delivery to
   Claude switched off) is answered with a mail in the usual layout whose OUTCOME says "reply discarded" and why.

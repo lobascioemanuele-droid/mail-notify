@@ -5,6 +5,9 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 ## Unreleased
 
 ### Added
+- A verified reply that cannot be delivered (no chat tied to the mail, unknown or expired reference, delivery to
+  Claude switched off) is answered with a mail in the usual layout whose OUTCOME says "reply discarded" and why.
+  Capped at 5 an hour; ccmail's own mails are never answered, so no loop.
 - `html_mail` setting (off by default): mails carry an HTML alternative next to the unchanged plain text, with
   quick-reply buttons (OFF / ON / PAUSE 60, and "Write to Claude") that are pre-filled `mailto:` replies, and the
   whole message in a box with its own scroll bar. The box follows `content_mode` (nothing extra in `title`/`minimal`).

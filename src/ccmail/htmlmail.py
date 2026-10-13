@@ -81,21 +81,19 @@ def _meta_grid(ctx) -> str:
 
 
 def _card(href: str, glyph: str, label: str, caption: str, accent: str, tint: str) -> str:
-    """One of three equal action cards. Style sits on the <td> (table-layout: fixed in the parent), so the cells
-    share one width and one height even when a label would wrap on a narrow phone screen."""
+    """One of three equal, compact action cards: icon and name on one line, a short caption under it. Style sits
+    on the <td> (table-layout: fixed in the parent), so the cells share one width and one height."""
     return (f'<td width="33%" valign="top" style="background:{tint};border:1px solid {accent};'
-            f'border-radius:12px;text-align:center">'
-            f'<a href="{_esc(href)}" style="display:block;text-decoration:none;padding:12px 2px">'
-            f'<div style="font-size:20px;line-height:24px;color:{accent};font-weight:bold">{glyph}</div>'
-            f'<div style="font-size:14px;line-height:18px;font-weight:700;color:{accent};margin-top:2px">'
-            f'{_esc(label)}</div>'
-            f'<div style="font-size:11px;line-height:14px;color:{MUTED};margin-top:2px">{_esc(caption)}</div>'
+            f'border-radius:10px;text-align:center">'
+            f'<a href="{_esc(href)}" style="display:block;text-decoration:none;padding:7px 2px">'
+            f'<div style="font-size:14px;line-height:18px;font-weight:700;color:{accent}">{glyph} {_esc(label)}</div>'
+            f'<div style="font-size:10.5px;line-height:13px;color:{MUTED}">{_esc(caption)}</div>'
             f'</a></td>')
 
 
 def _chip(href: str, label: str) -> str:
     """A rounded pill filling its (equal-width) table cell."""
-    return (f'<a href="{_esc(href)}" style="display:block;padding:7px 4px;border:1px solid {LINE};'
+    return (f'<a href="{_esc(href)}" style="display:block;padding:5px 4px;border:1px solid {LINE};'
             f'border-radius:999px;color:{INK};text-decoration:none;font-size:13px;text-align:center;'
             f'background:{CARD}">{label}</a>')
 
@@ -191,11 +189,11 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         o.append("</div>")
     if ref and to:
         cards = (_card(mailto(to, subject, "OFF", ref), "&#10005;", T("Spegni", "Turn off"),
-                       T("questo progetto", "this project"), "#b91c1c", "#fef2f2")
+                       T("questo progetto", "this one"), "#b91c1c", "#fef2f2")
                  + _card(mailto(to, subject, "ON", ref), "&#10003;", T("Riaccendi", "Turn on"),
-                         T("questo progetto", "this project"), "#15803d", "#f0fdf4")
+                         T("questo progetto", "this one"), "#15803d", "#f0fdf4")
                  + _card(mailto(to, subject, "PAUSA 60", ref), "&#10074;&#10074;", T("Pausa 1 ora", "Pause 1 hour"),
-                         T("tutti i progetti", "all projects"), "#b45309", "#fffbeb"))
+                         T("tutti", "all"), "#b45309", "#fffbeb"))
         pauses = "".join(f'<td width="33%" valign="top" style="padding:0">{_chip(mailto(to, subject, f"PAUSA {n}", ref), _esc(lab))}</td>'
                          for n, lab in ((15, "15 min"), (180, T("3 ore", "3 hours")), (480, T("8 ore", "8 hours"))))
         talk = (f'<div style="margin:12px 0 0">{_chip(mailto(to, subject, "", ref), "&#9998; " + _esc(T("Scrivi a Claude in questa chat", "Write to Claude in this chat")))}</div>'
@@ -205,7 +203,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         o.append(f'<div style="margin:12px 0 0;padding:14px;border:1px solid {LINE};border-radius:12px;'
                  f'background:{CARD};text-align:center">{_label(T("RISPOSTA RAPIDA", "QUICK REPLY"))}'
                  f'{table}<tr>{cards}</tr></table>'
-                 f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">'
+                 f'<div style="font-size:12px;color:{MUTED};margin:8px 0 4px">'
                  f'{_esc(T("Altre pause (tutti i progetti)", "Other pauses (all projects)"))}</div>'
                  f'{table}<tr>{pauses}</tr></table>{talk}'
                  f'<div style="margin-top:12px;font-size:11px;color:{MUTED}">'

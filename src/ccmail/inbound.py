@@ -81,6 +81,10 @@ def reply_body(text: str) -> str:
     return body[:MAX_REPLY]
 
 
+def first_line_of(text: str) -> str:
+    return next((ln.strip() for ln in (text or "").splitlines() if ln.strip() and not ln.strip().startswith(">")), "")
+
+
 def _is_reply(msg) -> bool:
     """A real reply, not ccmail's own notification (which also sits in the inbox of a self-addressed mailbox)."""
     return bool(str(msg.get("In-Reply-To") or "").strip()) or bool(_REPLY_SUBJECT.match(str(msg.get("Subject") or "")))
@@ -172,12 +176,18 @@ def handle_message(db, msg, expected_from: str, now=None, trusted_sent: bool = F
             # the body is ccmail's own mail text (an unquoted reply/forward, or our own notification)
             return done("ignored:no_command", "testo di una email di ccmail: nessuna istruzione")
         if not (to_claude and project and _is_reply(msg)):
+            if info is not None and _is_reply(msg) and reply_body(text):
+                # a verified reply from the user that goes nowhere: say so instead of staying silent
+                info.update(kind="rejected", reason="to_claude_off" if project else "no_ref",
+                            project_dir=project, ref=ref if project else None, text=reply_body(text))
             return done("ignored:no_command", ("prima riga: " + first[:60]) if first else "")
         body = reply_body(text)
         if not body:
             return done("ignored:empty_reply")
         sid = _target_session(db, ref)
         if not sid:
+            if info is not None:
+                info.update(kind="rejected", reason="no_session", project_dir=project, ref=ref, text=body)
             return done("rejected:no_session", body[:60])
         db.add_inbound_message(sid, project, body, now)
         if info is not None:
@@ -185,6 +195,9 @@ def handle_message(db, msg, expected_from: str, now=None, trusted_sent: bool = F
         return done("ok:to_claude", body[:60])
 
     if not project:
+        if info is not None:
+            info.update(kind="rejected", reason="no_ref", project_dir=None, ref=None,
+                        text=reply_body(text) or first_line_of(text))
         return done("rejected:no_valid_ref")
     if cmd[0] in ("off", "on"):
         row = db.one("SELECT name FROM projects WHERE project_dir=?", (project,))
@@ -308,12 +321,24 @@ class Inbound(threading.Thread):
         now = time.time()
         s = self.db.get_settings()
         try:
-            if info.get("kind") not in ("claude", "command"):
+            if info.get("kind") not in ("claude", "command", "rejected"):
                 return
+            if info.get("kind") == "rejected":
+                since = now - 3600  # at most 5 such mails an hour: a broken client cannot flood the mailbox
+                if self.db.one("SELECT COUNT(*) n FROM outbox WHERE created_at>? AND subject LIKE ?",
+                               (since, "%risposta scartata%"))["n"] >= 5 or \
+                        self.db.one("SELECT COUNT(*) n FROM outbox WHERE created_at>? AND subject LIKE ?",
+                                    (since, "%reply discarded%"))["n"] >= 5:
+                    return
             # every mail we send is repliable: the confirmation gets its own reference, tied to the same
             # project and session as the mail that was answered
-            ref = self.db.new_mail_ref(info.get("project_dir"), now, info.get("session_id"))
-            if info.get("kind") == "claude":
+            ref = (self.db.new_mail_ref(info.get("project_dir"), now, info.get("session_id"))
+                   if info.get("project_dir") else None)
+            if info.get("kind") == "rejected":
+                row = self.db.one("SELECT name FROM projects WHERE project_dir=?", (info.get("project_dir"),))
+                name = (row or {}).get("name") or (leaf_name(info["project_dir"]) if info.get("project_dir") else "")
+                subject, body = ack.build_rejection(s, info["reason"], info.get("text", ""), name, ref=ref)
+            elif info.get("kind") == "claude":
                 sess = self.db.one("SELECT * FROM sessions WHERE session_id=?", (info["session_id"],)) or {}
                 parked = self.is_parked(info["session_id"]) if self.is_parked else None
                 subject, body = ack.build_claude_ack(self.db, s, info["session_id"], info["text"], now,
@@ -415,7 +440,7 @@ class Inbound(threading.Thread):
             info = {}
             decision = handle_message(self.db, msg, expected, trusted_sent=sent_label,
                                       to_claude=bool(s.get("inbound_to_claude")), info=info)
-            if decision.startswith("ok:") and s.get("inbound_ack", True):
+            if (decision.startswith("ok:") and s.get("inbound_ack", True)) or info.get("kind") == "rejected":
                 self._acknowledge(info)
             if decision.startswith("ok:"):
                 M.store(num, "+FLAGS", "\\Seen")  # consumed: don't leave a stale unread reply

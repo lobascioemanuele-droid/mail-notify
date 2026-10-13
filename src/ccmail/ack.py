@@ -128,6 +128,39 @@ def build_claude_ack(db, settings, session_id, text, now, project="", chat_title
             "\n\n".join(parts) + "\n")
 
 
+def build_rejection(settings, reason: str, typed: str, project_name: str = "", ref=None):
+    """Mail in the usual layout whose OUTCOME says that a verified reply was discarded, and why."""
+    from .redact import redact
+    T = lambda it, en: pick(settings, it, en)  # noqa: E731
+    why, fix = {
+        "no_session": (T("non so a quale chat inoltrarla: la email a cui hai risposto non è legata a una chat "
+                         "(o la chat non c'è più).",
+                         "I do not know which chat to forward it to: the e-mail you replied to is not tied to a "
+                         "chat (or the chat no longer exists)."),
+                       T("Rispondi a una notifica recente della chat, oppure scrivi direttamente in chat.",
+                         "Reply to a recent notification of the chat, or write in the chat directly.")),
+        "no_ref": (T("la email non contiene un riferimento «Rif: ccm-…» valido, oppure è più vecchio di 14 giorni.",
+                     "the e-mail has no valid «Rif: ccm-…» reference, or it is older than 14 days."),
+                   T("Rispondi a una email recente di ccmail senza cancellare la riga «Rif:».",
+                     "Reply to a recent ccmail e-mail without deleting the «Rif:» line.")),
+        "to_claude_off": (T("la consegna delle risposte a Claude è disattivata nelle impostazioni.",
+                            "delivering replies to Claude is switched off in the settings."),
+                          T("Attiva «Le risposte arrivano a Claude» nell'app web, oppure usa OFF / ON / PAUSA.",
+                            "Turn on «Replies reach Claude» in the web app, or use OFF / ON / PAUSE.")),
+    }.get(reason, (reason, ""))
+    name = render.clean_line(project_name or "ccmail", 60)
+    ctx = [T(f"Progetto: {name}", f"Project: {name}"), f"Account: {render.account_label(settings)}"]
+    outcome = [T("Risposta scartata: ", "Reply discarded: ") + why]
+    if typed:
+        outcome += ["", T("Il tuo testo: ", "Your text: ") + "«" + render.clean_line(redact(typed), 300) + "»"]
+    parts = ["\n".join(ctx), render._section(T("Esito", "Outcome"), *outcome),
+             render._section(T("Cosa fare", "What to do"), fix)]
+    if ref:
+        parts.append(render.manage_section(ref, bool(settings.get("inbound_to_claude")), settings))
+    return (T(f"[Claude Code] {name}: risposta scartata", f"[Claude Code] {name}: reply discarded"),
+            "\n\n".join(parts) + "\n")
+
+
 def build_command_ack(settings, command: str, project_name: str, detail: str, ref=None):
     T = lambda it, en: pick(settings, it, en)  # noqa: E731
     revert = {"off": T("Per riaccenderlo rispondi ON a una email di ccmail, oppure usa la webapp.",

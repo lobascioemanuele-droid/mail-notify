@@ -154,7 +154,13 @@ Details and the threat model: [SECURITY.md](SECURITY.md). Report vulnerabilities
 
 `init` · `on` · `off` · `status [--cwd DIR]` · `test` · `open` · `stop` · `doctor [--network]` · `install-hooks
 [--autostart]` · `uninstall-hooks [--autostart]` · `install-skill` · `uninstall-skill` · `diagnose` · `trace on|off|show`
-· `migrate` · `daemon [--foreground]`. If `ccmail` is not on `PATH`, use `python -m ccmail …`.
+· `migrate` · `daemon [--foreground]` · `install-cli` · `uninstall-cli`.
+
+The command is installed as both `mail-notify` and `ccmail`. If neither is found (Microsoft Store Python does not
+put its Scripts folder on `PATH`), run once `python -m ccmail install-cli`: it writes a small `mail-notify` launcher
+into a folder that is already on `PATH` (Windows: `%LOCALAPPDATA%\Microsoft\WindowsApps`; macOS/Linux:
+`~/.local/bin`) and `uninstall-cli` removes only that file. After that: `mail-notify open`, `mail-notify status`,
+`mail-notify test`, `mail-notify stop`.
 
 ## Resource use
 

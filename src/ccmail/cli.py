@@ -223,6 +223,32 @@ def cmd_open(a):
     return 0
 
 
+def cmd_install_cli(a):
+    from . import launcher
+    try:
+        path, found = launcher.install()
+    except FileExistsError as e:
+        print(_(f"Esiste già un file «{e}» che non è mio: non lo sovrascrivo.",
+                f"A file «{e}» already exists and is not mine: I will not overwrite it."))
+        return 1
+    print(_(f"Comando creato: {path}", f"Command created: {path}"))
+    if found:
+        print(_(f"Da ora puoi scrivere «{launcher.NAME} open», «{launcher.NAME} status» ... in un terminale NUOVO.",
+                f"You can now type «{launcher.NAME} open», «{launcher.NAME} status» ... in a NEW terminal."))
+    else:
+        print(_(f"Attenzione: la cartella {path.parent} non è nel PATH. Aggiungila al PATH, poi riapri il terminale.",
+                f"Note: the folder {path.parent} is not on PATH. Add it to PATH, then reopen the terminal."))
+    return 0
+
+
+def cmd_uninstall_cli(a):
+    from . import launcher
+    path = launcher.uninstall()
+    print(_(f"Comando rimosso: {path}", f"Command removed: {path}") if path
+          else _("Nessun comando mio da rimuovere.", "No launcher of mine to remove."))
+    return 0
+
+
 def cmd_stop(a):
     print(_("Demone fermato.", "Daemon stopped.") if _api("POST", "/v1/shutdown", {})
           else _("Demone non in esecuzione.", "Daemon not running."))
@@ -411,7 +437,9 @@ def cmd_migrate(a):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="ccmail", description="Email notifications for Claude Code events")
+    name0 = os.path.basename(sys.argv[0]).lower()
+    prog = os.environ.get("CCMAIL_PROG") or ("mail-notify" if name0.startswith("mail-notify") else "ccmail")
+    p = argparse.ArgumentParser(prog=prog, description="Email notifications for Claude Code events")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="cmd", required=True)
     ini = sub.add_parser("init", help="set up the sender account and password (run it yourself, in your terminal)")
@@ -425,6 +453,8 @@ def main(argv=None):
                         ("test", cmd_test, "send ONE test e-mail"),
                         ("open", cmd_open, "open the settings web app"),
                         ("stop", cmd_stop, "stop the daemon"),
+                        ("install-cli", cmd_install_cli, "create the short «mail-notify» command (on PATH)"),
+                        ("uninstall-cli", cmd_uninstall_cli, "remove the «mail-notify» command"),
                         ("install-skill", cmd_install_skill, "install the mail-notify skill for Claude Code"),
                         ("uninstall-skill", cmd_uninstall_skill, "remove the mail-notify skill"),
                         ("migrate", cmd_migrate, "remove the old prototype's hooks")]:

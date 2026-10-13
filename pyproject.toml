@@ -37,6 +37,7 @@ Issues = "https://github.com/lobascioemanuele-droid/ccmail/issues"
 Changelog = "https://github.com/lobascioemanuele-droid/ccmail/blob/main/CHANGELOG.md"
 
 [project.scripts]
+mail-notify = "ccmail.cli:main"
 ccmail = "ccmail.cli:main"
 
 [tool.setuptools.packages.find]

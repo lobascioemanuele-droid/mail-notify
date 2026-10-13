@@ -4,6 +4,11 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 ## Unreleased
 
+### Added (command name)
+- `mail-notify` is a command of its own (console script next to `ccmail`), and `install-cli` / `uninstall-cli` write
+  or remove a small launcher in a folder already on `PATH`, for setups where the Scripts folder is not (Microsoft
+  Store Python). The launcher only ever overwrites or deletes a file it wrote itself.
+
 ### Fixed
 - Several commands arriving in one pass (for example ON then OFF) are applied oldest first, so the project ends
   in the state asked for last; before, the newest was applied first and the older one won.

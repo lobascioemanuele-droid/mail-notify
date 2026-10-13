@@ -6,6 +6,11 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 First stable release. What is stable is listed in [docs/STABILITY.md](docs/STABILITY.md).
 
+### Known limitations
+- macOS, Linux and mail providers other than Gmail (Outlook, iCloud and Yahoo presets) are covered by the
+  automated tests only; real-system testing is planned for a later release.
+- Hints in the terminal and in the web app now name the short `mail-notify` command (`python -m ccmail` still works).
+
 ### Changed (summary)
 - The summary in `summary` mode now covers the whole answer in at most 10 short lines: a lead, one line per
   section ("Heading: what it opens with") sampled evenly across the message, and the closing question. The default

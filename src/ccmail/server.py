@@ -165,7 +165,7 @@ class Handler(BaseHTTPRequestHandler):
                 n = (parse_qs(url.query).get("n") or [""])[0]
                 r = self.server.auth.redeem_nonce(n)
                 if not r:
-                    return self._err(403, "invalid or expired link; run 'ccmail open'")
+                    return self._err(403, "invalid or expired link; run 'mail-notify open'")
                 cookie = f"{COOKIE}={r[0]}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800"
                 return self._send(302, b"", extra={"Location": "/", "Set-Cookie": cookie})
             if not path.startswith("/v1/"):
@@ -432,15 +432,15 @@ def status_dict(db) -> dict:
         warnings.append(i18n.pick(s, "Credenziali nel file di riserva: l'archivio sicuro del sistema non è disponibile.",
                                   "Credentials in the fallback file: the system's secure store is not available."))
     if not cred:
-        warnings.append(i18n.pick(s, "Credenziali non configurate: esegui 'ccmail init' in un terminale.",
-                                  "Credentials not configured: run 'ccmail init' in a terminal."))
+        warnings.append(i18n.pick(s, "Credenziali non configurate: esegui 'mail-notify init' in un terminale.",
+                                  "Credentials not configured: run 'mail-notify init' in a terminal."))
     try:
         hooks = installer.is_installed()
     except Exception:
         hooks = False
     if not hooks:
-        warnings.append(i18n.pick(s, "Hook non installati in settings.json: esegui 'ccmail install-hooks'.",
-                                  "Hooks not installed in settings.json: run 'ccmail install-hooks'."))
+        warnings.append(i18n.pick(s, "Hook non installati in settings.json: esegui 'mail-notify install-hooks'.",
+                                  "Hooks not installed in settings.json: run 'mail-notify install-hooks'."))
     combo = config.check_combo(s)
     if combo:  # legacy value saved before the rule existed: the watchdog is paused until it is fixed
         warnings.append(i18n.pick(s, "Watchdog in pausa: " + combo.split(": ", 1)[1] + ". Correggilo in Regole.",

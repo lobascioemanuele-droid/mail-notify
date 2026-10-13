@@ -21,9 +21,11 @@ only change in a backwards-compatible way inside 1.x, and a breaking change need
 - **The local HTTP API** under `/v1/…`: it is private to the bundled web app and the command line, protected by a
   token, and may change without notice.
 - **Internal modules**: ccmail is an application, not a library. Import nothing from `ccmail.*`.
-- **Platforms**: Windows is tested for real. macOS and Linux are covered by automated tests only; behaviour there can
-  be corrected in a patch release even if that changes what you saw.
-- **Providers other than Gmail**: presets for Outlook, iCloud and Yahoo exist but are untested.
+- **Platforms**: Windows is tested for real. macOS and Linux are covered by automated tests only and are marked
+  *to be tested in a later release*; behaviour there can be corrected in a patch release even if that changes what
+  you saw.
+- **Providers other than Gmail**: the Outlook, iCloud and Yahoo presets exist but are *to be tested in a later
+  release*.
 
 ## Support
 

@@ -460,7 +460,7 @@
       sub = "Le notifiche sono accese ma in pausa: nessuna email fino ad allora" + (to ? ", poi ti riscrivo a " + to + "." : ".");
     } else {
       title = "Le notifiche sono attive";
-      sub = to ? "Ti scrivo a " + to + " solo quando serve." : "Manca un destinatario: configura le credenziali con «ccmail init».";
+      sub = to ? "Ti scrivo a " + to + " solo quando serve." : "Manca un destinatario: configura le credenziali con «mail-notify init».";
     }
     $("#hero-title").textContent = title;
     $("#hero-sub").textContent = sub;
@@ -532,15 +532,15 @@
     const items = [];
     items.push(healthItem("ok", "Demone in esecuzione", "ccmail " + ov.version + " risponde su " + location.host + "."));
     if (!c.configured) {
-      items.push(healthItem("bad", "Credenziali non configurate", "Serve l'indirizzo Gmail e una password per le app. Esegui in un terminale:", cmdBox("ccmail init")));
+      items.push(healthItem("bad", "Credenziali non configurate", "Serve l'indirizzo Gmail e una password per le app. Esegui in un terminale:", cmdBox("mail-notify init")));
     } else if (c.backend === "dpapi-file" || c.backend === "plain-file") {
-      items.push(healthItem("warn", "Credenziali nel file di riserva", "Mittente " + (c.sender || "?") + ". L'archivio sicuro del sistema non era disponibile: la password è in un file riservato al tuo utente. Funziona, ma è meno protetta. Per riprovare:", cmdBox("ccmail init")));
+      items.push(healthItem("warn", "Credenziali nel file di riserva", "Mittente " + (c.sender || "?") + ". L'archivio sicuro del sistema non era disponibile: la password è in un file riservato al tuo utente. Funziona, ma è meno protetta. Per riprovare:", cmdBox("mail-notify init")));
     } else {
       items.push(healthItem("ok", "Credenziali configurate", "Mittente " + (c.sender || "?") + " · " + backendLabel(c.backend) + "."));
     }
     items.push(ov.hooks_installed
       ? healthItem("ok", "Hook di Claude Code installati", "Claude Code avvisa ccmail a ogni evento.")
-      : healthItem("bad", "Hook non installati", "Senza hook Claude Code non avvisa ccmail e non arriverà nessuna email. Esegui:", cmdBox("ccmail install-hooks")));
+      : healthItem("bad", "Hook non installati", "Senza hook Claude Code non avvisa ccmail e non arriverà nessuna email. Esegui:", cmdBox("mail-notify install-hooks")));
     const failed = (ov.last_24h && ov.last_24h.failed) || 0;
     if (failed) {
       items.push(healthItem("warn", "Invio SMTP: " + failed + (failed === 1 ? " email non partita" : " email non partite"), "Controlla l'errore in Attività › Posta in uscita, poi prova l'email di prova in Connessione.",
@@ -848,7 +848,7 @@
     },
     skill: {
       intro: "Mentre un processo gira, non ricevi email a ogni risposta di Claude. In questa modalità è Claude a programmare i propri risvegli periodici (con ScheduleWakeup, come indicato dalla skill mail-notify): il demone non lo risveglia. Le risposte di Claude ai risvegli vengono inviate come aggiornamento, e alla fine dei processi ricevi una sola email di fine.",
-      mode: "Il periodo viene comunicato a Claude tramite la skill mail-notify (comando «ccmail status»). Sono i token di Claude a pagare ogni controllo programmato.",
+      mode: "Il periodo viene comunicato a Claude tramite la skill mail-notify (comando «mail-notify status»). Sono i token di Claude a pagare ogni controllo programmato.",
       minutes: (m) => "Claude programma un risveglio ogni " + fmtDur(m * 60) + " mentre ha processi in background. Il demone invia l'email solo se è passato circa questo tempo dall'ultimo aggiornamento.",
       note: "Cosa succede: Claude avvia il processo → programma da solo il prossimo controllo → al risveglio interroga lo stato → ricevi l'email. Funziona solo se Claude ha attiva la skill mail-notify in quella sessione e le notifiche sono accese.",
     },
@@ -1203,13 +1203,13 @@
       ...row("Password", c.configured ? "salvata, mai mostrata" : "—"));
     const note = $("#cred-note");
     note.replaceChildren();
-    if (!c.configured) note.append(h("div", { class: "banner banner-bad small" }, icon("alert"), h("p", { text: "Nessuna credenziale: le email non possono partire. Segui i passaggi qui sotto e poi esegui «ccmail init»." })));
-    else if (c.backend === "dpapi-file" || c.backend === "plain-file") note.append(h("div", { class: "banner banner-warn small" }, icon("alert"), h("p", { text: "L'archivio sicuro del sistema non era disponibile, quindi la password è in un file riservato al tuo utente (" + backendLabel(c.backend) + "). Funziona, ma è una soluzione di riserva: riesegui «ccmail init» per riprovare a usare l'archivio sicuro." })));
+    if (!c.configured) note.append(h("div", { class: "banner banner-bad small" }, icon("alert"), h("p", { text: "Nessuna credenziale: le email non possono partire. Segui i passaggi qui sotto e poi esegui «mail-notify init»." })));
+    else if (c.backend === "dpapi-file" || c.backend === "plain-file") note.append(h("div", { class: "banner banner-warn small" }, icon("alert"), h("p", { text: "L'archivio sicuro del sistema non era disponibile, quindi la password è in un file riservato al tuo utente (" + backendLabel(c.backend) + "). Funziona, ma è una soluzione di riserva: riesegui «mail-notify init» per riprovare a usare l'archivio sicuro." })));
     const to = (state.settings && state.settings.values.recipient) || ov.recipient || c.sender;
     $("#test-to").textContent = to || "(nessun destinatario)";
     const tb = $("#test-btn");
     tb.disabled = !c.configured;
-    tb.title = c.configured ? "" : "Configura prima le credenziali con ccmail init";
+    tb.title = c.configured ? "" : "Configura prima le credenziali con mail-notify init";
   }
   async function testEmail() {
     const ov = state.overview || {};
@@ -1231,7 +1231,7 @@
         ? h("div", { class: "banner banner-good small" }, icon("check"), h("p", { text: "Email inviata a " + to + ". Controlla la posta (anche lo spam)." }))
         : h("div", { class: "banner banner-bad small" }, icon("alert"), h("div", { class: "banner-body" }, h("p", { text: "Invio non riuscito: " + (r.error || "errore sconosciuto") + "." }),
           /App Password|autenticazione/i.test(r.error || "") ? h("p", { text: "Ricrea la password per le app e salvala di nuovo:" }) : null,
-          /App Password|autenticazione|credenziali/i.test(r.error || "") ? cmdBox("ccmail init") : null)));
+          /App Password|autenticazione|credenziali/i.test(r.error || "") ? cmdBox("mail-notify init") : null)));
       refreshOverview();
     } catch (e) {
       res.replaceChildren();
@@ -1301,7 +1301,7 @@
         const info = /non sono collegate|fuori dall'app/i.test(w) && !restart;
         const extra = [];
         if (restart) {
-          extra.push(h("p", { text: "In un terminale esegui, uno dopo l'altro:" }), cmdBox("ccmail stop"), cmdBox("ccmail open"));
+          extra.push(h("p", { text: "In un terminale esegui, uno dopo l'altro:" }), cmdBox("mail-notify stop"), cmdBox("mail-notify open"));
         }
         return h("div", { class: "banner small " + (info ? "banner-info" : "banner-warn"), role: "note" },
           icon(info ? "info" : "alert"), h("div", { class: "banner-body" }, h("p", { text: w }), ...extra));
@@ -1480,7 +1480,7 @@
         box.replaceChildren(h("div", { class: "empty empty-rich" },
           h("p", { text: "Ancora nessun progetto. Appena Claude Code invia un evento, il progetto compare qui con le sue chat." }),
           h("p", { class: "small", text: "Se usi già Claude Code e qui resta vuoto, probabilmente mancano gli hook. Installali con:" }),
-          cmdBox("ccmail install-hooks")));
+          cmdBox("mail-notify install-hooks")));
         return;
       }
       box.replaceChildren(...list.map(renderProject));

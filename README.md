@@ -20,9 +20,9 @@ usage limit, or when your background processes finish. You can answer from your 
 - **Works while you are away.** While background tasks run, Claude is woken at a period you choose, only when tasks
   exist, to report their status.
 
-> **Status: beta.** Windows is the tested platform. macOS and Linux are implemented and covered by unit tests in CI,
-> but have had little real-world use; please report what you find. Gmail is the tested provider. Outlook, iCloud and
-> Yahoo presets are provided but untested.
+> **Tested today: Windows with Gmail.** macOS, Linux and mail providers other than Gmail (the Outlook, iCloud and
+> Yahoo presets) are implemented and covered by the automated tests in CI, but are **not yet tested on a real
+> system: that is planned for a later release.** Please report what you find.
 
 ## Install step by step
 
@@ -227,7 +227,7 @@ as tappable boxes (when "Replies reach Claude" is on), and the whole message in 
 
 ### Settings web app
 
-`ccmail open` (or `mail-notify open`) shows: an **Overview** with health checks and the main on/off switch; **Rules**
+`mail-notify open` shows: an **Overview** with health checks and the main on/off switch; **Rules**
 (what to report, how often, how much text, reply control); **Activity** with per-project switches and the latest chats;
 and **Connection** with provider presets, the device name and a test button. It listens on `127.0.0.1` only, with a
 one-time sign-in link, CSRF protection and a strict content security policy.
@@ -269,7 +269,7 @@ is applied by the daemon that sent the mail it refers to; daemons ignore referen
 | Data folder | `%APPDATA%\ccmail` | `~/Library/Application Support/ccmail` | `~/.config/ccmail` |
 | Password store | Credential Manager (fallback: DPAPI file) | Keychain (fallback: 0600 file) | Secret Service via `secret-tool` (fallback: 0600 file) |
 | Start at logon | Task Scheduler | LaunchAgent | `systemd --user` (fallback: XDG autostart) |
-| Status | tested | beta | beta |
+| Status | tested | to be tested (later release) | to be tested (later release) |
 
 The fallback files are announced loudly by `init`, `status`, `doctor` and the web app. On Linux install
 `libsecret-tools` to use the Secret Service. Claude Code's folder honours `CLAUDE_CONFIG_DIR`.

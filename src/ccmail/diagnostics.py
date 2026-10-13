@@ -28,7 +28,7 @@ def collect(db) -> dict:
         warnings.append("Nessuna cartella dei metadati dell'app trovata: i nomi delle chat arriveranno solo dai "
                         "transcript. Percorsi provati elencati sotto.")
     elif parsed and not in_db:
-        warnings.append("I metadati ci sono ma il demone non li ha ancora caricati: riavvialo (ccmail stop, ccmail open).")
+        warnings.append("I metadati ci sono ma il demone non li ha ancora caricati: riavvialo (mail-notify stop, mail-notify open).")
     if total and linked < total:
         warnings.append(f"{total - linked} sessioni non sono collegate a una chat dell'app "
                         "(avviate da terminale o chat cancellate): compaiono come «fuori dall'app».")

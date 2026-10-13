@@ -31,7 +31,7 @@ def target(system_windows: bool = None, env=None, home: Path = None) -> Path:
 def content(python: str, system_windows: bool = None) -> str:
     win = _windows() if system_windows is None else system_windows
     if win:
-        return f'@echo off\r\nrem {MARKER}\r\nset "CCMAIL_PROG={NAME}"\r\n"{python}" -m ccmail %*\r\n'
+        return f'@echo off\r\nsetlocal\r\nrem {MARKER}\r\nset "CCMAIL_PROG={NAME}"\r\n"{python}" -m ccmail %*\r\n'
     return f'#!/bin/sh\n# {MARKER}\nCCMAIL_PROG={NAME} exec "{python}" -m ccmail "$@"\n'
 
 

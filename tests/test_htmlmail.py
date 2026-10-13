@@ -123,6 +123,18 @@ class HtmlMailTests(TmpHome):
         self.assertNotIn("**Titolo**", h)
         self.assertIn("<b>Titolo</b>", h)
 
+    def test_nul_in_text_cannot_crash_the_rendering(self):
+        h = htmlmail.md_to_html("testo \x000\x00 fine `codice`")
+        self.assertIn("testo", h)
+        self.assertNotIn("\x00", h)
+
+    def test_badge_ignores_project_name_and_headline(self):
+        h = htmlmail.render("[Claude Code] background-sync: task completato", "Progetto: x\n", self.s, "me@example.com")
+        self.assertIn("COMPLETATO", h)
+        self.assertNotIn(">IN BACKGROUND<", h)
+        h2 = htmlmail.render("[Claude Code] demo: processi in background terminati", "Progetto: x\n", self.s, "me@example.com")
+        self.assertIn("IN BACKGROUND", h2)
+
     def test_markdown_rendering_escapes_html(self):
         h = htmlmail.md_to_html("Testo <script>alert(1)</script> e `<b>x</b>`\n\n```\n<img src=x onerror=1>\n```")
         self.assertNotIn("<script>", h)

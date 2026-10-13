@@ -47,7 +47,10 @@ def send(settings: dict, subject: str, body: str, timeout: int = 20, full_text: 
     html = ""
     if settings.get("html_mail"):
         from . import htmlmail
-        html = htmlmail.render(subject, body, settings, to, full_text)
+        try:
+            html = htmlmail.render(subject, body, settings, to, full_text)
+        except Exception:  # a bug in the optional HTML part must never keep a mail from going out
+            html = ""
     msg = build_message(user, to, subject, body, html)
     host, port = settings["smtp_host"], settings["smtp_port"]
     ctx = ssl.create_default_context()

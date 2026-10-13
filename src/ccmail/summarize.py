@@ -156,6 +156,8 @@ def summarize(text: str, limit: int = 300) -> str:
                 entries.append(_hard_cut(_first_sentence(v), line_cap) if k == "para"
                                else "• " + _hard_cut(_first_sentence(v), line_cap))
 
+    if question and question in lead:  # a one-paragraph message that ends with a question
+        question = ""
     lead_lines = [lead] if lead else []
     tail_lines = [question] if question else []
 

@@ -325,10 +325,8 @@ class Inbound(threading.Thread):
                 return
             if info.get("kind") == "rejected":
                 since = now - 3600  # at most 5 such mails an hour: a broken client cannot flood the mailbox
-                if self.db.one("SELECT COUNT(*) n FROM outbox WHERE created_at>? AND subject LIKE ?",
-                               (since, "%risposta scartata%"))["n"] >= 5 or \
-                        self.db.one("SELECT COUNT(*) n FROM outbox WHERE created_at>? AND subject LIKE ?",
-                                    (since, "%reply discarded%"))["n"] >= 5:
+                if self.db.one("SELECT COUNT(*) n FROM outbox WHERE created_at>? AND kind='discard'",
+                               (since,))["n"] >= 5:
                     return
             # every mail we send is repliable: the confirmation gets its own reference, tied to the same
             # project and session as the mail that was answered
@@ -347,7 +345,7 @@ class Inbound(threading.Thread):
             else:
                 subject, body = ack.build_command_ack(s, info["command"], info.get("project_name", ""),
                                                       info.get("detail", ""), ref=ref)
-            self.db.enqueue(None, subject, body, now)
+            self.db.enqueue(None, subject, body, now, kind="discard" if info.get("kind") == "rejected" else None)
             if self.on_enqueue:
                 self.on_enqueue()
         except Exception:

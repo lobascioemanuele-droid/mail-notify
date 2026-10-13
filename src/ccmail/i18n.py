@@ -6,6 +6,7 @@ the call site as an (it, en) pair, which keeps each sentence next to the logic t
 """
 import locale
 import os
+import time
 
 
 _claude_cache = {"key": None, "value": None}
@@ -17,10 +18,19 @@ def claude_language():
     try:
         from . import paths
         path = paths.claude_dir() / "settings.json"
-        st = path.stat()
+        now = time.monotonic()
+        c = _claude_cache
+        if c["key"] is not None and c.get("path") == str(path) and now - c.get("at", 0.0) < 2.0:
+            return c["value"]  # pick() is called many times per mail: look at the file at most every 2 s
+        try:
+            st = path.stat()
+        except OSError:
+            c.update(key="missing", value=None, path=str(path), at=now)
+            return None
         key = (str(path), st.st_mtime_ns)
-        if _claude_cache["key"] == key:
-            return _claude_cache["value"]
+        if c["key"] == key:
+            c.update(path=str(path), at=now)
+            return c["value"]
         import json
         value = None
         lang = str((json.loads(path.read_text(encoding="utf-8")) or {}).get("language") or "").strip().lower()
@@ -28,7 +38,7 @@ def claude_language():
             value = "it"
         elif lang.startswith(("en", "engl")):
             value = "en"
-        _claude_cache.update(key=key, value=value)
+        _claude_cache.update(key=key, value=value, path=str(path), at=now)
         return value
     except Exception:
         return None

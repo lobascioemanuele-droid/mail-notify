@@ -152,7 +152,7 @@ def build_rejection(settings, reason: str, typed: str, project_name: str = "", r
     ctx = [T(f"Progetto: {name}", f"Project: {name}"), f"Account: {render.account_label(settings)}"]
     outcome = [T("Risposta scartata: ", "Reply discarded: ") + why]
     if typed:
-        outcome += ["", T("Il tuo testo: ", "Your text: ") + "«" + render.clean_line(redact(typed), 300) + "»"]
+        outcome += ["", T("Il tuo testo:", "Your text:"), "«" + render.clean_line(redact(typed), 300) + "»"]
     parts = ["\n".join(ctx), render._section(T("Esito", "Outcome"), *outcome),
              render._section(T("Cosa fare", "What to do"), fix)]
     if ref:

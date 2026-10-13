@@ -26,6 +26,10 @@ FONT = "Segoe UI,Roboto,Helvetica,Arial,sans-serif"
 
 # (words found in the subject, accent colour, tint, label it, label en); first match wins
 KINDS = (
+    (("ricevuta e messa in coda", "received and queued"), "#1d4ed8", "#dbeafe", "RICEVUTA, IN CODA", "RECEIVED, QUEUED"),
+    (("comando eseguito", "command executed"), "#15803d", "#dcfce7", "COMANDO ESEGUITO", "COMMAND EXECUTED"),
+    (("risposta scartata", "reply discarded"), "#b91c1c", "#fee2e2", "RISPOSTA SCARTATA", "REPLY DISCARDED"),
+    (("email di prova", "test e-mail"), "#475569", "#e2e8f0", "PROVA", "TEST"),
     (("limite di utilizzo", "usage limit"), "#b45309", "#fef3c7", "LIMITE RAGGIUNTO", "LIMIT REACHED"),
     (("errore api", "api error"), "#b91c1c", "#fee2e2", "ERRORE", "ERROR"),
     (("serve il tuo input", "input is needed"), "#1d4ed8", "#dbeafe", "SERVE IL TUO INPUT", "INPUT NEEDED"),
@@ -152,6 +156,33 @@ def remainder(full: str, shown: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", "".join(keep)).strip()
 
 
+def _quote(text: str, accent: str) -> str:
+    return (f'<div style="margin:8px 0;padding:10px 12px;background:{BOX};border-left:4px solid {accent};'
+            f'border-radius:6px;font-size:14px;line-height:1.5;color:{INK};white-space:pre-wrap;'
+            f'word-wrap:break-word">{_esc(text)}</div>')
+
+
+def _body_lines(lines, accent: str) -> str:
+    """Plain lines as paragraphs; a line that is a quotation («…», as in confirmations) as a quote block."""
+    out, buf = [], []
+
+    def flush():
+        if buf:
+            out.append(_paragraphs(buf))
+            buf.clear()
+
+    for ln in lines:
+        s = ln.strip()
+        quoted = s.startswith("«") and s.endswith("»")
+        if quoted:
+            flush()
+            out.append(_quote(s, accent))
+        else:
+            buf.append(ln)
+    flush()
+    return "".join(out)
+
+
 def render(subject: str, body: str, settings: dict, to: str, full_text: str = "") -> str:
     T = lambda it, en: pick(settings, it, en)  # noqa: E731
     ctx, sections = split_sections(body)
@@ -176,7 +207,7 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
         if sec_title.upper().startswith(("COMANDI", "SUGGESTED")):
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
-            o.append(_paragraphs(lines))
+            o.append(_body_lines(lines, accent))
         full = remainder((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
         if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '

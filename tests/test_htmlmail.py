@@ -131,3 +131,46 @@ class HtmlMailTests(TmpHome):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConfirmationMailTests(TmpHome):
+    """The mails ccmail sends about a reply get the same HTML layout as the notifications."""
+
+    def setUp(self):
+        super().setUp()
+        self.s = {**self.db.get_settings(), "language": "it", "inbound_to_claude": True}
+
+    def html(self, subject, body):
+        return htmlmail.render(subject, body, self.s, "me@example.com")
+
+    def test_queued_confirmation(self):
+        from ccmail import ack
+        subject, body = ack.build_claude_ack(self.db, self.s, "s1", "Controlla i risultati", 1_000.0,
+                                             project="demo", chat_title="Chat", ref=REF)
+        h = self.html(subject, body)
+        self.assertIn("RICEVUTA, IN CODA", h)
+        self.assertIn("Controlla i risultati", h)
+        self.assertIn("border-left:4px solid", h)  # the quoted reply is a quote block
+        self.assertIn("mailto:", h)
+        self.assertNotIn("Rispondi a questa email scrivendo", h)
+
+    def test_command_executed(self):
+        from ccmail import ack
+        subject, body = ack.build_command_ack(self.s, "off", "demo", "Le notifiche del progetto «demo» sono state disattivate.", ref=REF)
+        h = self.html(subject, body)
+        self.assertIn("COMANDO ESEGUITO", h)
+        self.assertIn("disattivate", h)
+
+    def test_discarded_reply(self):
+        from ccmail import ack
+        subject, body = ack.build_rejection(self.s, "no_session", "Ok perfetto", "demo", ref=REF)
+        h = self.html(subject, body)
+        self.assertIn("RISPOSTA SCARTATA", h)
+        self.assertIn("Ok perfetto", h)
+        self.assertIn("COSA FARE", h)
+
+    def test_english_badges(self):
+        from ccmail import ack
+        s = {**self.s, "language": "en"}
+        subject, body = ack.build_rejection(s, "no_ref", "hi", "demo", ref=REF)
+        self.assertIn("REPLY DISCARDED", htmlmail.render(subject, body, s, "me@example.com"))

@@ -190,5 +190,7 @@ measurable at that rate. What cannot be measured here: how a given mail app rend
 - IMAP traffic is estimated from protocol sizes, not counted on the socket.
 - HTML mail: sizes and render times are measured; how Gmail, Apple Mail or Outlook draw it (and whether the scroll
   box scrolls) was checked by hand in one Gmail account only.
+- The web app is translated by static catalogs (Italian and English); the English texts were written by hand and
+  checked in the browser view by view, not by native speakers.
 - Reply handling, discard mails and the HTML mail were exercised against the author's own Gmail account; other
   providers are untested.

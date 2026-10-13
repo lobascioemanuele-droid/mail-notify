@@ -16,6 +16,12 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
   or remove a small launcher in a folder already on `PATH`, for setups where the Scripts folder is not (Microsoft
   Store Python). The launcher only ever overwrites or deletes a file it wrote itself.
 
+### Added (language)
+- The web app is available in English: the `language` setting now covers the page, the mails and the command line.
+  `auto` follows Claude Code's own `language` setting (Italian/English), then the system language. Catalogs are
+  static files (`web/lang-en.js`, `web/lang-en-app.js`), applied without network access; a test checks that every
+  catalog entry still exists in the page.
+
 ### Fixed
 - Several commands arriving in one pass (for example ON then OFF) are applied oldest first, so the project ends
   in the state asked for last; before, the newest was applied first and the older one won.

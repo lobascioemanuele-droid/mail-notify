@@ -92,8 +92,11 @@ scroll bar (without repeating what is already shown above it). The same layout i
 
 `ccmail open` shows: an overview with health checks; rules (what, how often, how much text); an activity view with
 **per-project on/off switches** and the latest chats; and the connection page with provider presets and a test button.
-It listens on `127.0.0.1` only, with a one-time sign-in link, CSRF protection and a strict CSP. The page is in
-Italian; mails and the command line follow the `language` setting (`auto`, `it`, `en`).
+It listens on `127.0.0.1` only, with a one-time sign-in link, CSRF protection and a strict CSP. The page,
+the mails and the command line follow the `language` setting (`auto`, `it`, `en`); `auto` uses the language
+set in Claude Code's own `language` setting when it names Italian or English, else the system language. The page
+translates from static catalogs (`web/lang-*.js`): nothing is sent to a translation service, and data that comes
+from the daemon (project names, chat titles, mail subjects) is never translated.
 
 ### Reply by mail
 

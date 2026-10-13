@@ -32,14 +32,35 @@ class SummarizeTests(unittest.TestCase):
         s = summarize(LONG, 600)
         self.assertLessEqual(len(s), 600)
         self.assertIn("Ho completato il refactoring", s)
-        self.assertIn("• Validazione", s)
-        self.assertIn("altri punti", s)
+        self.assertIn("Cosa è cambiato: Validazione", s)  # one line per section: heading + what it opens with
         self.assertTrue(s.rstrip().endswith("PR con queste modifiche?"))
         self.assertNotIn("def pay", s)
         self.assertNotIn("|---|", s)
         self.assertNotIn("**", s)
-        self.assertNotIn("Cosa è cambiato", s)  # headings don't take bullet slots
-        self.assertLess(len(s), 500)
+        self.assertLessEqual(len(s.splitlines()), 10)
+
+    def test_covers_the_whole_message_in_at_most_ten_lines(self):
+        text = "Ho finito la verifica.\n\n" + "\n".join(
+            f"## Sezione {i}\nIn questa sezione ho controllato il punto {i} e tutto torna." for i in range(1, 21))
+        s = summarize(text, 3000)
+        lines = s.splitlines()
+        self.assertLessEqual(len(lines), 10)
+        self.assertIn("Sezione 1:", s)
+        self.assertIn("Sezione 20:", s)  # the end of the message is represented, not only the beginning
+        self.assertRegex(s, r"\(\+\d+ altri punti\)")
+
+    def test_sections_and_closing_question(self):
+        text = ("Il lavoro è completo.\n\n## Merge\n- Fatto il merge su main.\n- I test passano.\n\n"
+                "## Limiti\nNon ho provato macOS.\n\nVuoi che pubblichi?")
+        s = summarize(text, 1200).splitlines()
+        self.assertEqual(s[0], "Il lavoro è completo.")
+        self.assertTrue(s[1].startswith("Merge: Fatto il merge su main."))
+        self.assertEqual(s[2], "Limiti: Non ho provato macOS.")
+        self.assertEqual(s[-1], "Vuoi che pubblichi?")
+
+    def test_a_closing_paragraph_does_not_become_the_section_body(self):
+        text = "Ciao.\n\n## Esito\n- Primo punto.\n- Secondo punto.\n\nNota finale non importante."
+        self.assertIn("Esito: Primo punto.", summarize(text, 1200))
 
     def test_plain_text_only(self):
         s = summarize("Fatto. Ho sistemato il bug nel parser e aggiunto un test. Altre note lunghe " * 20, 300)

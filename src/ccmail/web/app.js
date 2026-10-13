@@ -914,56 +914,87 @@
     }
     return "";
   }
-  // Port of ccmail/summarize.py: whole sentences only; items are kept or dropped, never cut mid-sentence.
+  // Port of ccmail/summarize.py: at most 10 short lines covering the whole message (lead, one line per
+  // section, closing question); never cut mid-sentence.
   function summarizeText(text, limit) {
-    const ITEM_SOFT = 240, SENT_HARD = 320, MAX_ITEMS = 6;
+    const MAX_LINES = 10, LINE_CAP = 200, ITEM_CAP = 90, LEAD_CAP = 320;
     const clean = (s) => s.replace(/(\*\*|__|`)/g, "").replace(/^#{1,6}\s*|^>\s*/gm, "").replace(/\s+/g, " ").replace(/^[\s\-–:]+|[\s\-–:]+$/g, "");
     const sentences = (s) => s.split(/(?<=[.!?])\s+(?=[A-ZÀ-ÖØ-Þ0-9"'(\[])/).map((x) => x.trim()).filter(Boolean);
     const hardCut = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, "").replace(/[,;:\s-]+$/, "") + " […]");
-    const itemText = (s) => { s = clean(s); if (s.length > ITEM_SOFT) s = sentences(s)[0] || s; return hardCut(s, SENT_HARD); };
+    const firstSentence = (s) => sentences(s)[0] || s;
     text = String(text || "").replace(/```[\s\S]*?(```|$)/g, "").trim();
     if (!text) return "";
-    const paras = text.split(/\n\s*\n/).filter((p) => p.trim());
-    const itemRe = /^\s*(?:[-*•]|\d+[.)])\s+(.*\S)/, headRe = /^\s*#{1,6}\s+(.*\S)/;
-    let items = [], heads = [], leadSrc = null;
-    for (const p of paras) {
-      const lines = p.split(/\r?\n/).filter((l) => l.trim());
-      const plain = lines.filter((l) => !itemRe.test(l) && !headRe.test(l) && !l.trimStart().startsWith("|"));
-      if (leadSrc === null && plain.length && plain.length === lines.length) leadSrc = plain.join(" ");
-      for (const l of lines) {
-        if (l.trimStart().startsWith("|")) continue;
-        const hd = headRe.exec(l), m = hd || itemRe.exec(l);
-        if (m) { const c = clean(m[1]); if (c) (hd ? heads : items).push(c); }
+    const itemRe = /^\s*(?:[-*•]|\d+[.)])\s+(.*\S)/, headRe = /^\s*#{1,6}\s+(.*\S)/, ruleRe = /^\s*(?:[-*_=]\s*){3,}$/;
+    const blocks = [];
+    let para = [];
+    const flush = () => { if (para.length) { blocks.push(["para", clean(para.join(" "))]); para = []; } };
+    for (const raw of text.split(/\r?\n/)) {
+      const s = raw.trim();
+      if (!s || ruleRe.test(raw) || s.startsWith("|")) { flush(); continue; }
+      let m = headRe.exec(raw);
+      if (m) { flush(); blocks.push(["head", clean(m[1])]); continue; }
+      m = itemRe.exec(raw);
+      if (m) { flush(); blocks.push(["item", clean(m[1])]); continue; }
+      if (/^[ \t]/.test(raw) && blocks.length && blocks[blocks.length - 1][0] === "item" && !para.length) {
+        blocks[blocks.length - 1][1] += " " + clean(s);
+        continue;
+      }
+      para.push(s);
+    }
+    flush();
+    const bl = blocks.filter((b) => b[1]);
+    if (!bl.length) return hardCut(clean(text), Math.min(limit, LEAD_CAP));
+    const sections = [{ head: null, seq: [] }];
+    for (const [k, v] of bl) {
+      if (k === "head") sections.push({ head: v, seq: [] });
+      else sections[sections.length - 1].seq.push([k, v]);
+    }
+    let lead = "";
+    for (const sec of sections) {
+      const i = sec.seq.findIndex((x) => x[0] === "para");
+      if (i >= 0) {
+        const s = sentences(sec.seq.splice(i, 1)[0][1]);
+        lead = s.slice(0, 2).join(" ");
+        if (lead.length > limit) lead = s[0] || lead;
+        lead = hardCut(lead, Math.min(LEAD_CAP, limit));
+        break;
       }
     }
-    if (!items.length) items = heads;
-    let lead = "";
-    if (leadSrc) {
-      const s = sentences(clean(leadSrc));
-      lead = s.slice(0, 2).join(" ");
-      if (lead.length > limit) lead = s[0] || lead;
-      lead = hardCut(lead, Math.min(SENT_HARD, limit));
-    }
     let question = "";
-    const lastLines = paras.length ? paras[paras.length - 1].split(/\r?\n/) : [];
-    const last = lastLines.length ? clean(lastLines[lastLines.length - 1]) : "";
-    if (last.endsWith("?") && !lead.includes(last)) question = hardCut(last, SENT_HARD);
-    const fixed = [lead, question].filter(Boolean);
-    let used = fixed.reduce((n, x) => n + x.length + 1, 0);
-    const chosen = [];
-    for (const it of items.slice(0, MAX_ITEMS)) {
-      const t = "• " + itemText(it);
-      if (chosen.length && used + t.length + 1 > limit - 20) break;
-      if (!chosen.length && used + t.length + 1 > limit && fixed.length) break;
-      chosen.push(t);
-      used += t.length + 1;
+    const [lk, lv] = bl[bl.length - 1];
+    if ((lk === "para" || lk === "item") && lv.endsWith("?")) {
+      question = hardCut(lv, LEAD_CAP);
+      for (const sec of sections) sec.seq = sec.seq.filter((x) => x[1] !== lv);
     }
-    const extra = items.length - chosen.length;
-    const out = (lead ? [lead] : []).concat(chosen);
-    if (extra > 0) out.push("(+" + extra + " altri punti)");
-    if (question) out.push(question);
-    if (!out.length) out.push(hardCut(clean(text), Math.min(limit, SENT_HARD)));
-    let res = out.join("\n");
+    const entries = [];
+    for (const sec of sections) {
+      const seq = sec.seq;
+      if (sec.head) {
+        let body = "";
+        if (seq.length && seq[0][0] === "para") body = firstSentence(seq[0][1]);
+        else if (seq.length) body = seq.slice(0, 2).filter((x) => x[0] === "item").map((x) => hardCut(firstSentence(x[1]), ITEM_CAP)).join(" · ");
+        if (body) entries.push(hardCut(sec.head + ": " + body.replace(/:+$/, ""), LINE_CAP));
+      } else {
+        for (const [k, v] of seq) entries.push(k === "para" ? hardCut(firstSentence(v), LINE_CAP) : "• " + hardCut(firstSentence(v), LINE_CAP));
+      }
+    }
+    const sample = (items, k) => {
+      if (k >= items.length) return items.slice();
+      if (k <= 0) return [];
+      if (k === 1) return [items[0]];
+      const idx = Array.from(new Set(Array.from({ length: k }, (_, i) => Math.round(i * (items.length - 1) / (k - 1))))).sort((x, y) => x - y);
+      return idx.map((i) => items[i]);
+    };
+    const leadLines = lead ? [lead] : [], tailLines = question ? [question] : [];
+    const assemble = (chosen, hidden) => leadLines.concat(chosen, hidden > 0 ? ["(+" + hidden + " altri punti)"] : [], tailLines).join("\n");
+    const room = MAX_LINES - leadLines.length - tailLines.length;
+    let chosen = entries.length > room ? sample(entries, Math.max(room - 1, 0)) : entries.slice();
+    let res = assemble(chosen, entries.length - chosen.length);
+    while (res.length > limit && chosen.length) {
+      chosen.splice(Math.floor(chosen.length / 2), 1);
+      res = assemble(chosen, entries.length - chosen.length);
+    }
+    if (!res) res = hardCut(clean(text), Math.min(limit, LEAD_CAP));
     if (res.length > limit) res = hardCut(res, Math.max(limit - 4, 10));
     return res;
   }

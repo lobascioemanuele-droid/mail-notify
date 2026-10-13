@@ -224,7 +224,9 @@ def render(subject: str, body: str, settings: dict, to: str, full_text: str = ""
             o.append(_suggestions(lines, to, ref, subject, bool(ref and to and settings.get("inbound_to_claude")), T))
         else:
             o.append(_body_lines(lines, accent, spaced=sec_title not in OUTCOME_TITLES))
-        full = remainder((full_text or "").strip(), main) if sec_title in OUTCOME_TITLES else ""
+        full = (full_text or "").strip() if sec_title in OUTCOME_TITLES else ""
+        if full and settings.get("content_mode") == "full":
+            full = remainder(full, main)  # the section already shows the start of the text: only the rest
         if len(full) >= 20:
             o.append(f'<div style="font-size:12px;color:{MUTED};margin:14px 0 6px">&#8595; '
                      f'{_esc(T("Messaggio completo", "Full message"))}'

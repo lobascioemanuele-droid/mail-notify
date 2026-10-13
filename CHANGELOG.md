@@ -4,6 +4,13 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 ## Unreleased
 
+### Changed (summary)
+- The summary in `summary` mode now covers the whole answer in at most 10 short lines: a lead, one line per
+  section ("Heading: what it opens with") sampled evenly across the message, and the closing question. The default
+  `summary_chars` is 1200. The scrollable box of the HTML mail holds the complete answer (in `full` mode, the part
+  that is not already shown above it).
+- `install-skill` and `install-hooks` also create the short `mail-notify` command, so there is no third step.
+
 ### Added (command name)
 - `mail-notify` is a command of its own (console script next to `ccmail`), and `install-cli` / `uninstall-cli` write
   or remove a small launcher in a folder already on `PATH`, for setups where the Scripts folder is not (Microsoft

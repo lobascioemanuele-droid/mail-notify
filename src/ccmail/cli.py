@@ -223,6 +223,21 @@ def cmd_open(a):
     return 0
 
 
+def _ensure_cli() -> None:
+    """Create the `mail-notify` launcher next to the other install steps, so nobody has to remember a third one.
+    Never fatal and never overwrites a file that is not ours."""
+    from . import launcher
+    try:
+        path, found = launcher.install()
+    except FileExistsError:
+        return
+    except OSError:
+        return
+    note = "" if found else _(f" (la cartella {path.parent} non è nel PATH)", f" (the folder {path.parent} is not on PATH)")
+    print(_(f"Comando breve pronto: «{launcher.NAME} open», «{launcher.NAME} status»… in un terminale nuovo.{note}",
+            f"Short command ready: «{launcher.NAME} open», «{launcher.NAME} status»… in a new terminal.{note}"))
+
+
 def cmd_install_cli(a):
     from . import launcher
     try:
@@ -264,6 +279,7 @@ def cmd_install_hooks(a):
         how = installer.autostart(True)
         print(_("Avvio automatico:", "Autostart:") + " "
               + (_("configurato", "configured") if how else _("NON riuscito", "FAILED")))
+    _ensure_cli()
     return 0
 
 
@@ -283,6 +299,7 @@ def cmd_install_skill(a):
                 f"The previous file was not ccmail's: saved as {r['backup']}."))
     print(_("Riavvia Claude Code per vederla (/mail-notify on|off|status|test|open).",
             "Restart Claude Code to see it (/mail-notify on|off|status|test|open)."))
+    _ensure_cli()
     return 0
 
 

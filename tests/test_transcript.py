@@ -49,6 +49,19 @@ class TranscriptTests(TmpHome):
             {"question": "Quale database?", "options": [{"label": "SQLite", "description": "locale"}, {"label": "Postgres"}]}])))
         self.assertEqual(transcript.last_turn_text(p), "Quale database?\n- SQLite: locale\n- Postgres")
 
+    def test_desktop_app_wrap_up_card_is_the_message(self):
+        # the Claude desktop app closes a turn with this tool: recap + the question for you + suggested replies
+        p = self.write(user("lavora"), assistant(text("Sto lavorando")), assistant(tool(
+            "mcp__ccd_turn__wrap_up", recap="Ho finito la prima parte.", ask="Procedo con la seconda?",
+            actions=[{"label": "Sì", "message": "Procedi pure con la seconda parte"}, {"label": "No", "message": ""}],
+            blocked=True)), tool_result())
+        self.assertEqual(transcript.last_turn_text(p),
+                         "Ho finito la prima parte.\n\nProcedo con la seconda?\n\n- Sì: Procedi pure con la seconda parte")
+
+    def test_wrap_up_with_only_a_recap(self):
+        p = self.write(user("x"), assistant(tool("mcp__ccd_turn__wrap_up", recap="Fatto.", ask="", actions=[], blocked=False)))
+        self.assertEqual(transcript.last_turn_text(p), "Fatto.")
+
     def test_falls_back_to_the_last_text_of_the_turn_when_it_ends_on_tool_calls(self):
         p = self.write(user("lavora"), assistant(text("Sto controllando i file")), assistant(tool("Read", file_path="x")),
                        tool_result(), assistant(tool("Bash", command="ls")))

@@ -6,7 +6,7 @@ All notable changes to ccmail. Versions follow [Semantic Versioning](https://sem
 
 - A turn that ends on a plan to approve, a question for you or tool calls reaches the hook with no
   `last_assistant_message`, so the mail had no ESITO section and no full-message box. The text is now read from the
-  chat transcript (the plan, the questions with their options, or Claude's last text of that turn) and goes through the
+  chat transcript (the closing card of the Claude desktop app, the plan, the questions with their options, or Claude's last text of that turn) and goes through the
   same content mode and redaction as any other message. Only the end of the transcript is read, and only when the hook
   gives no message; nothing is read from earlier turns or from sub-agents.
 

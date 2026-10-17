@@ -33,6 +33,17 @@ def _questions_text(inp: dict) -> str:
     return "\n".join(x for x in out if x)
 
 
+def _wrap_up_text(inp: dict) -> str:
+    """The closing card of the Claude desktop app (`wrap_up`): recap, the question for you, the suggested replies."""
+    head = "\n\n".join(x for x in (str(inp.get("recap") or "").strip(), str(inp.get("ask") or "").strip()) if x)
+    acts = []
+    for act in inp.get("actions") or []:
+        if isinstance(act, dict) and act.get("message"):
+            label = f"{act['label']}: " if act.get("label") else ""
+            acts.append(f"- {label}{act['message']}")
+    return (head + ("\n\n" + "\n".join(acts) if acts else "")).strip()
+
+
 def _block_text(block: dict) -> str:
     kind = block.get("type")
     if kind == "text":
@@ -43,6 +54,8 @@ def _block_text(block: dict) -> str:
             return str(inp.get("plan") or "").strip()  # the plan Claude asks you to approve
         if block.get("name") == "AskUserQuestion":
             return _questions_text(inp)
+        if str(block.get("name") or "").endswith("wrap_up"):
+            return _wrap_up_text(inp)
     return ""
 
 

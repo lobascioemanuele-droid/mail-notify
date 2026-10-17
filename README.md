@@ -139,13 +139,31 @@ mail-notify setup --autostart
 
 One command does all of this, and sends nothing:
 
-- adds ccmail's hooks to Claude Code's settings (a backup of the file is made first);
+- adds ccmail's hooks to Claude Code's settings, `~/.claude/settings.json` (when the file already exists, a copy
+  named `settings.json.bak-<date>` is made first);
 - copies the `/mail-notify` skill to `~/.claude/skills/mail-notify/`;
-- creates the short `mail-notify` command if it is missing;
-- with `--autostart`, starts the background daemon at logon.
+- creates the short `mail-notify` command if it is missing (on Windows it is a small `mail-notify.cmd` file in
+  `%LOCALAPPDATA%\Microsoft\WindowsApps`; on macOS and Linux a script in `~/.local/bin`);
+- creates the data folder with the local database (Windows: `%APPDATA%\ccmail`);
+- with `--autostart`, starts the background daemon at logon. **This changes your system**: on Windows it adds a
+  Task Scheduler task, on macOS a launchd agent, on Linux a systemd user unit (or an autostart entry). Leave the
+  option out if you prefer to start the daemon yourself with `mail-notify open`. To undo it later:
+  `mail-notify uninstall-hooks --autostart`, `uninstall-skill` and `uninstall-cli`.
 
 It never asks for the password (that is `init`, step 2) and can be run again at any time. The three parts are also
-available one by one: `install-hooks`, `install-skill` and `install-cli`.
+available one by one: `install-hooks`, `install-skill` and `install-cli`. Steps 2 and 3 can be done in either order.
+
+Good to know on the first run:
+
+- Right after `setup`, and before `init`, `mail-notify doctor` and `status` report the missing credentials
+  (`[FAIL] Credentials not configured`). That is expected: run `init` and the message goes away.
+- The daemon starts by itself at the first Claude Code event, or immediately with `mail-notify open`, which opens the
+  settings page in your browser. If no browser can be opened (SSH, WSL), it prints a one-time link instead: open it
+  in a browser on the same computer within 60 seconds.
+- **Language.** The program's messages follow the `language` setting of Claude Code, then the system language, so on
+  an Italian system you see Italian even though this guide is in English. To force a language for one terminal, set
+  `CCMAIL_LANG=en` (or `it`); for the web app and the e-mails use the Language setting in the web app (Auto,
+  Italiano, English).
 
 ### Alternative for step 3: install the skill from Claude Code (plugin)
 

@@ -30,14 +30,17 @@ def _load(path: Path) -> dict:
     return json.loads(text) if text.strip() else {}
 
 
-def _save(path: Path, data: dict) -> None:
+def _save(path: Path, data: dict):
+    """Write the settings file; returns the backup path, or None when there was no file to back up."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    bak = None
     if path.exists():
         bak = path.with_name(f"{path.name}.bak-{time.strftime('%Y%m%d-%H%M%S')}")
         bak.write_bytes(path.read_bytes())
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+    return bak
 
 
 def _strip(data: dict, needle: str) -> int:
@@ -64,7 +67,8 @@ def _strip(data: dict, needle: str) -> int:
     return removed
 
 
-def install(path: Path = None, events=EVENTS) -> None:
+def install(path: Path = None, events=EVENTS):
+    """Merge our hooks into the settings file. Returns the backup path (None if the file did not exist)."""
     path = path or default_settings_path()
     data = _load(path)
     _strip(data, OURS)  # replace our own entries (e.g. interpreter path changed)
@@ -85,7 +89,7 @@ def install(path: Path = None, events=EVENTS) -> None:
     hooks.setdefault("Stop", []).append({"matcher": "", "hooks": [{
         "type": "command", "command": f'"{sys.executable}" {WAKE}', "async": True, "asyncRewake": True,
         "timeout": WAKE_TIMEOUT_S}]})
-    _save(path, data)
+    return _save(path, data)
 
 
 TRACE = "-m ccmail trace-hook"

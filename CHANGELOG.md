@@ -2,6 +2,22 @@
 
 All notable changes to ccmail. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.2 - 2026-10-17
+
+Polish found by a first-time install that followed only the README, in a clean environment.
+
+- `mail-notify open` says what it did and, when no browser can be opened (SSH, WSL), prints the one-time link
+  (valid 60 seconds, single use, loopback only).
+- `status` shows the queue as words (`1 failed, 3 sent`) instead of a Python dictionary.
+- `install-hooks`/`setup` only mention a backup when one was really made; a new settings file says so.
+- `doctor` no longer suggests `mail-notify on` to start the daemon (it does not): it says the daemon starts at the
+  first Claude Code event or with `mail-notify open`.
+- The short-command message no longer says "ready" and "not on PATH" in the same breath; it names the fallback
+  `python -m ccmail`.
+- README: what `setup` creates, that `--autostart` registers a system task (and how to undo it), that `doctor` before
+  `init` reports missing credentials, how the language is chosen (`CCMAIL_LANG`, web app setting), and a Gmail
+  step by step for the app password.
+
 ## 1.0.1 - 2026-10-13
 
 - `setup` checks whether `mail-notify` is available in the terminal being used and, when it is not (for example

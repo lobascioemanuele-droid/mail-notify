@@ -160,6 +160,15 @@ def cmd_off(a):
     return 0
 
 
+def queue_text(counts: dict, en: bool) -> str:
+    """The outbox counters as words ("1 failed, 3 sent"), not a raw Python dict."""
+    if not counts:
+        return "empty" if en else "vuota"
+    names = ({"queued": "queued", "sent": "sent", "failed": "failed"} if en
+             else {"queued": "in coda", "sent": "inviate", "failed": "fallite"})
+    return ", ".join(f"{n} {names.get(k, k)}" for k, n in sorted(counts.items()))
+
+
 def cmd_status(a):
     from . import skillinstall
     db = DB(paths.db_path())
@@ -183,7 +192,7 @@ def cmd_status(a):
         print("Skill: outdated (mail-notify install-skill)" if en else "Skill: non aggiornata (mail-notify install-skill)")
     else:
         print("Skill: " + ("installed" if en else "installata"))
-    print("Queue:" if en else "Coda:", db.outbox_counts() or ("empty" if en else "vuota"))
+    print("Queue:" if en else "Coda:", queue_text(db.outbox_counts(), en))
     cwd = getattr(a, "cwd", None)
     if cwd:  # per-project switch (web app → Attività); used by the mail-notify skill
         from .db import leaf_name, norm_dir
@@ -228,7 +237,15 @@ def cmd_open(a):
         return 1
     _st, d = r
     port = json.loads(paths.info_path().read_text(encoding="utf-8"))["port"]
-    webbrowser.open(f"http://127.0.0.1:{port}/auth?n={d['nonce']}")
+    link = f"http://127.0.0.1:{port}/auth?n={d['nonce']}"
+    if webbrowser.open(link):
+        print(_(f"Impostazioni aperte nel browser: http://127.0.0.1:{port}/",
+                f"Settings opened in the browser: http://127.0.0.1:{port}/"))
+    else:  # no browser here (SSH, WSL, minimal system): the one-time link works from any browser on this PC
+        print(_("Non riesco ad aprire il browser. Apri questo indirizzo (vale una volta sola, 60 secondi, solo su "
+                "questo computer):",
+                "Cannot open a browser. Open this address (single use, 60 seconds, this computer only):"))
+        print(link)
     return 0
 
 
@@ -242,9 +259,14 @@ def _ensure_cli() -> None:
         path, found = launcher.install()
     except (FileExistsError, OSError):
         return
-    note = "" if found else _(f" (la cartella {path.parent} non è nel PATH)", f" (the folder {path.parent} is not on PATH)")
-    print(_(f"Comando breve pronto: «{launcher.NAME} open», «{launcher.NAME} status»… in un terminale nuovo.{note}",
-            f"Short command ready: «{launcher.NAME} open», «{launcher.NAME} status»… in a new terminal.{note}"))
+    if found:
+        print(_(f"Comando breve pronto: «{launcher.NAME} open», «{launcher.NAME} status»… in un terminale nuovo.",
+                f"Short command ready: «{launcher.NAME} open», «{launcher.NAME} status»… in a new terminal."))
+    else:
+        print(_(f"Comando breve creato in {path.parent}, ma quella cartella non è nel PATH: finché non la aggiungi "
+                "usa «python -m ccmail» al suo posto.",
+                f"Short command created in {path.parent}, but that folder is not on PATH: until you add it, "
+                "use «python -m ccmail» instead."))
 
 
 def cmd_install_cli(a):
@@ -280,9 +302,14 @@ def cmd_stop(a):
 
 
 def cmd_install_hooks(a):
-    installer.install()
-    print(_(f"Hook installati in {installer.default_settings_path()} (backup creato).",
-            f"Hooks installed in {installer.default_settings_path()} (backup created)."))
+    bak = installer.install()
+    where = installer.default_settings_path()
+    if bak:
+        print(_(f"Hook installati in {where} (copia di sicurezza: {bak.name}).",
+                f"Hooks installed in {where} (backup: {bak.name})."))
+    else:
+        print(_(f"Hook installati in {where} (file nuovo: nessuna copia necessaria).",
+                f"Hooks installed in {where} (new file: nothing to back up)."))
     print(_("Riavvia Claude Code: gli hook si leggono all'avvio.", "Restart Claude Code: hooks are read at startup."))
     if a.autostart:
         how = installer.autostart(True)
@@ -419,7 +446,8 @@ def _doctor_checks(network: bool):
         "" if enabled else "mail-notify install-hooks --autostart")
     st = _api("GET", "/v1/status")
     add("ok" if st else "warn", L("Demone", "Daemon"), L("in esecuzione", "running") if st else L("fermo", "stopped"),
-        "" if st else "mail-notify on")
+        "" if st else L("parte da solo al primo evento di Claude Code, o subito con «mail-notify open»",
+                        "starts by itself at the first Claude Code event, or right away with «mail-notify open»"))
     if network:
         for label, host, port in (("SMTP", s["smtp_host"], s["smtp_port"]), ("IMAP", s["imap_host"], 993)):
             try:

@@ -11,7 +11,7 @@ A Stop with tasks still running and no heartbeat due is intermediate and stays s
 import json
 import time
 
-from . import chats, projroot, render, suggest
+from . import chats, projroot, render, suggest, transcript
 from .redact import redact
 
 MAIL_EVENTS = ("Stop", "Notification", "StopFailure", "SessionEnd")
@@ -50,6 +50,11 @@ def handle_event(db, payload: dict, now=None, received_at=None) -> str:
             db.set_session(sid, title=t)
             sess = {**sess, "title": t}
     chat_title = db.chat_title(sess)
+    if event == "Stop" and not str(payload.get("last_assistant_message") or "").strip():
+        # the turn ended on a plan to approve, a question or tool calls: the hook has no final text, the transcript has
+        text = transcript.last_turn_text(sess.get("transcript_path"))
+        if text:
+            payload = {**payload, "last_assistant_message": text}
 
     def done(decision, mail=None, summary=None):
         eid = db.add_event(now, sid, event, ntype, summary if summary is not None else _summary(event, payload),
